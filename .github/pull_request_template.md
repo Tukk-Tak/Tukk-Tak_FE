@@ -7,8 +7,7 @@
 ## 🛠️ 작업 상세 내용
 
 - [ ] FEATURE
-- [ ] UPDATE
-- [ ] STYLE
+- [ ] UPDATE/STYLE
 - [ ] BUGFIX
 - [ ] REFACTOR
 - [ ] UPDATE MAIN(DEPLOY)
@@ -36,3 +35,5 @@ Closes #
 ## 📸 화면 이미지 첨부
 
 ---
+
+## 🐇 코드래빗 요약(작성 불필요)
