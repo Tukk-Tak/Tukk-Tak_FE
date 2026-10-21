@@ -1,7 +1,7 @@
 name: 'Update'
 description: 'feature 외 내용 이슈 템플릿'
 title: '[UPDATE] '
-labels: ['Update']
+labels: ['Update/Style']
 assignees: []
 
 body:

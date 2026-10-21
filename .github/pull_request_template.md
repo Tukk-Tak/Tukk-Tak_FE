@@ -7,8 +7,7 @@
 ## 🛠️ 작업 상세 내용
 
 - [ ] FEATURE
-- [ ] UPDATE
-- [ ] STYLE
+- [ ] UPDATE/STYLE
 - [ ] BUGFIX
 - [ ] REFACTOR
 - [ ] UPDATE MAIN(DEPLOY)
