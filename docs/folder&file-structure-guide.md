@@ -45,6 +45,7 @@ app → widgets → features → entities → shared
 - 다른 레이어/슬라이스를 가져올 때는 반드시 `@/` 별칭을 씁니다. (`../../../features/...`처럼 상대경로로 레이어를 넘지 않습니다.)
 - 같은 슬라이스 안의 파일끼리는 상대경로를 씁니다. (`@/entities/block/...`처럼 자기 슬라이스를 별칭으로 가져오면 린트 에러가 납니다.)
 - 위 import 방향 규칙은 ESLint(`no-restricted-imports`)가 검사합니다. 예외가 꼭 필요하면 `// eslint-disable-next-line no-restricted-imports -- 사유`처럼 사유를 적습니다.
+- 린트는 경로에 레이어 이름이 들어 있는 상대경로(`../../features/...`)도 막지만, 같은 레이어의 형제 슬라이스를 `../b`처럼 가져오는 것은 막지 못합니다. 이 경우는 리뷰에서 확인합니다.
 
 ## 3. 새 코드를 어디에 둘지 판단하는 순서
 

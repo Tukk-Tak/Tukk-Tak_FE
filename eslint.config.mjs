@@ -27,13 +27,20 @@ const layerRule = (layer) => ({
       'no-restricted-imports': [
          'error',
          {
-            patterns: FORBIDDEN[layer].map((target) => ({
-               group: [`@/${target}/**`],
-               message:
+            patterns: FORBIDDEN[layer].flatMap((target) => {
+               const message =
                   target === layer
                      ? '같은 레이어의 다른 슬라이스를 직접 import하지 마세요. 같은 슬라이스 안에서는 상대경로를 쓰세요.'
-                     : `${layer} 레이어는 ${target} 레이어를 import할 수 없습니다. (app → widgets → features → entities → shared)`,
-            })),
+                     : `${layer} 레이어는 ${target} 레이어를 import할 수 없습니다. (app → widgets → features → entities → shared)`;
+
+               // 별칭(@/)과 상대경로(../) 양쪽으로 레이어를 넘는 import를 막는다.
+               // 상대경로는 경로에 레이어 이름이 들어 있을 때만 잡는다.
+               // (같은 레이어의 형제 슬라이스를 ../b 처럼 가져오는 것은 못 잡으므로 컨벤션과 리뷰로 관리)
+               return [
+                  { group: [`@/${target}/**`], message },
+                  { group: [`../**/${target}/**`], message },
+               ];
+            }),
          },
       ],
    },
