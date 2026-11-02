@@ -41,7 +41,10 @@ app → widgets → features → entities → shared
 
 - `entities/block`이 `features/editor-block-toolbar`를 import하면 안 됩니다. (역방향)
 - `shared/ui/Button`이 `entities`나 `features`를 import하면 안 됩니다. (shared는 항상 최하단)
-- 같은 레이어끼리(`features/a`가 `features/b`를) 직접 import하는 것도 지양합니다. 공유가 필요하면 그 로직을 `entities`나 `shared`로 내려야 합니다.
+- 같은 레이어끼리(`features/a`가 `features/b`를) 직접 import하는 것도 지양합니다. 공유가 필요하면 그 로직을 `entities`나 `shared`로 내려야 합니다. 단, `entities`끼리는 도메인 모델이 서로를 참조할 수 있어 허용합니다.
+- 다른 레이어/슬라이스를 가져올 때는 반드시 `@/` 별칭을 씁니다. (`../../../features/...`처럼 상대경로로 레이어를 넘지 않습니다.)
+- 같은 슬라이스 안의 파일끼리는 상대경로를 씁니다. (`@/entities/block/...`처럼 자기 슬라이스를 별칭으로 가져오면 린트 에러가 납니다.)
+- 위 import 방향 규칙은 ESLint(`no-restricted-imports`)가 검사합니다. 예외가 꼭 필요하면 `// eslint-disable-next-line no-restricted-imports -- 사유`처럼 사유를 적습니다.
 
 ## 3. 새 코드를 어디에 둘지 판단하는 순서
 
