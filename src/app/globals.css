@@ -1,33 +1,27 @@
-:root {
-   --color-primary: #ff8a1e;
-   --color-primary-dark: #5a3418;
-   --color-bg: #ffffff;
-   --color-fg: #211c17;
-}
+@import 'tailwindcss';
+@import '../shared/config/tokens.css';
 
-@media (prefers-color-scheme: dark) {
-   :root {
-      --color-bg: #211c17;
-      --color-fg: #f7f5f2;
+/*
+ * 요소 선택자 규칙은 반드시 @layer base 안에 둔다.
+ * 레이어 밖에 두면 Tailwind 유틸리티(p-4, bg-brand-orange 등)보다 우선해서 유틸리티가 적용되지 않는다.
+ */
+@layer base {
+   html,
+   body {
+      max-width: 100vw;
+      overflow-x: hidden;
    }
-}
 
-html,
-body {
-   max-width: 100vw;
-   overflow-x: hidden;
-   background: var(--color-bg);
-   color: var(--color-fg);
-}
+   body {
+      @apply bg-white text-black;
+      font-family:
+         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo',
+         'Malgun Gothic', sans-serif;
+   }
 
-body {
-   font-family:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo', 'Malgun Gothic',
-      sans-serif;
-}
-
-* {
-   box-sizing: border-box;
-   padding: 0;
-   margin: 0;
+   * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+   }
 }
