@@ -1,5 +1,20 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { Noto_Sans_KR, Outfit } from 'next/font/google';
+import { Header } from '@/widgets/header';
+
+// 한글 글리프는 unicode-range 단위로 필요한 조각만 내려받는다.
+const notoSansKr = Noto_Sans_KR({
+   subsets: ['latin'],
+   variable: '--font-noto-sans-kr',
+   display: 'swap',
+});
+
+const outfit = Outfit({
+   subsets: ['latin'],
+   variable: '--font-outfit-src',
+   display: 'swap',
+});
 
 export const metadata: Metadata = {
    title: '뚝딱',
@@ -13,8 +28,12 @@ export default function RootLayout({
    children: React.ReactNode;
 }>) {
    return (
-      <html lang="ko">
-         <body>{children}</body>
+      <html lang="ko" className={`${notoSansKr.variable} ${outfit.variable}`}>
+         <body>
+            {/* 세션 연동 전 임시값. 로그인 기능이 생기면 실제 사용자 정보로 교체한다. */}
+            <Header user={{ nickname: '맛있는분식' }} />
+            {children}
+         </body>
       </html>
    );
 }
