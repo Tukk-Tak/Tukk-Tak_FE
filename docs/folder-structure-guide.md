@@ -29,7 +29,7 @@ src/
 | `widgets/` | 여러 feature를 묶어 독립적으로 존재하는 UI 블록. 라우트 여러 개에서 재사용될 수 있음 | `widgets/header`, `widgets/site-renderer`, `widgets/editor-sidebar` |
 | `features/` | 사용자 액션 하나 = 폴더 하나. 이름은 `{도메인}-{동작}` 형식 | `features/auth-signup`, `features/editor-block-toolbar`, `features/community-like` |
 | `entities/` | 데이터 타입 정의 + 그 데이터를 그리는 **기본** 컴포넌트(장식/상태 로직 없이 순수 표시만). 여러 feature/widget에서 재사용됨 | `entities/block`, `entities/site`, `entities/post`, `entities/user`, `entities/plan` |
-| `shared/` | 어떤 도메인에도 속하지 않는 것. 디자인 시스템(ui), API 클라이언트/훅(lib), 컬러·폰트 토큰(config) | `shared/ui/Button`, `shared/lib/apiClient`, `shared/config/colors` |
+| `shared/` | 어떤 도메인에도 속하지 않는 것. 디자인 시스템(ui), API 클라이언트/훅(lib), 컬러·폰트 토큰(config) | `shared/ui/Button`, `shared/lib/apiClient`, `shared/config/tokens` |
 
 ### import 방향 규칙 (중요)
 
@@ -43,7 +43,7 @@ app → widgets → features → entities → shared
 - `shared/ui/Button`이 `entities`나 `features`를 import하면 안 됩니다. (shared는 항상 최하단)
 - 같은 레이어끼리(`features/a`가 `features/b`를) 직접 import하는 것도 지양합니다. 공유가 필요하면 그 로직을 `entities`나 `shared`로 내려야 합니다. 단, `entities`끼리는 도메인 모델이 서로를 참조할 수 있어 허용합니다.
 - 다른 레이어/슬라이스를 가져올 때는 반드시 `@/` 별칭을 씁니다. (`../../../features/...`처럼 상대경로로 레이어를 넘지 않습니다.)
-- 같은 슬라이스 안의 파일끼리는 상대경로를 씁니다. (`@/entities/block/...`처럼 자기 슬라이스를 별칭으로 가져오면 린트 에러가 납니다.)
+- 같은 슬라이스 안의 파일끼리는 상대경로를 씁니다. (`features/a` 안에서 `@/features/a/...`처럼 자기 슬라이스를 별칭으로 가져오면 린트 에러가 납니다. 단, `entities`는 `entities`끼리 허용하는 예외라 린트가 잡지 못하므로, `entities` 안에서도 같은 슬라이스는 상대경로를 쓰는 것을 컨벤션으로 지킵니다.)
 - 위 import 방향 규칙은 ESLint(`no-restricted-imports`)가 검사합니다. 예외가 꼭 필요하면 `// eslint-disable-next-line no-restricted-imports -- 사유`처럼 사유를 적습니다.
 - 린트는 경로에 레이어 이름이 들어 있는 상대경로(`../../features/...`)도 막지만, 같은 레이어의 형제 슬라이스를 `../b`처럼 가져오는 것은 막지 못합니다. 이 경우는 리뷰에서 확인합니다.
 
