@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
-const NAV_ITEMS = [
+// 모바일 메뉴(MobileMenu)에서도 같은 목록을 쓴다.
+export const NAV_ITEMS = [
    { label: '커뮤니티', href: '/community' },
    { label: '요금제', href: '/pricing' },
 ];
