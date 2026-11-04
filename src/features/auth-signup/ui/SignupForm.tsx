@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useGuestOnly } from '@/entities/user/model/useGuestOnly';
 import type { GoogleAuthError } from '../model/googleAuthError';
 import { useEmailVerification } from '../model/useEmailVerification';
@@ -24,8 +24,13 @@ export function SignupForm({ googleError }: { googleError?: GoogleAuthError }) {
    });
    const emailVerification = useEmailVerification();
 
+   const rootRef = useRef<HTMLDivElement>(null);
+
    const goTo = (next: Step) => {
       setStep(next);
+      // 인증 화면은 페이지 전체가 아니라 가장 가까운 main이 스크롤되므로 그 스크롤도 함께 맨 위로 올린다.
+      // (아래에서 "다음"을 눌러도 다음 단계의 첫 입력란부터 보이게 한다.)
+      rootRef.current?.closest('main')?.scrollTo({ top: 0 });
       window.scrollTo({ top: 0 });
    };
 
@@ -36,7 +41,7 @@ export function SignupForm({ googleError }: { googleError?: GoogleAuthError }) {
    };
 
    return (
-      <div className="w-full max-w-135">
+      <div ref={rootRef} className="w-full max-w-135">
          <SignupStepper currentStep={step} />
 
          <div hidden={step !== 1}>

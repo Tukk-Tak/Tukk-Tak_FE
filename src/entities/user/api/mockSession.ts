@@ -13,8 +13,26 @@ function isUser(value: unknown): value is User {
    );
 }
 
-function storages() {
-   return [window.sessionStorage, window.localStorage];
+// 쿠키를 막은 브라우저나 제한된 iframe에서는 저장소 속성을 읽는 것만으로 예외가 난다.
+// 그래서 접근 자체를 개별로 보호하고, 쓸 수 있는 저장소만 돌려준다.
+function storages(): Storage[] {
+   const available: Storage[] = [];
+   for (const name of ['sessionStorage', 'localStorage'] as const) {
+      try {
+         available.push(window[name]);
+      } catch {
+         // 접근이 막힌 저장소는 건너뛴다.
+      }
+   }
+   return available;
+}
+
+function getStorage(remember: boolean): Storage | undefined {
+   try {
+      return remember ? window.localStorage : window.sessionStorage;
+   } catch {
+      return undefined;
+   }
 }
 
 export function readMockSession(): User | null {
@@ -44,10 +62,7 @@ export function clearMockSession() {
 export function saveMockSession(user: User, remember: boolean) {
    clearMockSession();
    try {
-      (remember ? window.localStorage : window.sessionStorage).setItem(
-         MOCK_SESSION_KEY,
-         JSON.stringify(user),
-      );
+      getStorage(remember)?.setItem(MOCK_SESSION_KEY, JSON.stringify(user));
    } catch {
       // 저장소를 쓸 수 없으면 이 탭의 메모리 상태로만 로그인된다.
    }

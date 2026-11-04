@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { saveMockSession } from '@/entities/user/api/mockSession';
 import { signIn } from '@/entities/user/model/sessionStore';
 import { toApiError } from '@/shared/lib/apiClient';
 import { completeGoogleLogin } from '../api/completeGoogleLogin';
@@ -19,7 +20,9 @@ export function GoogleLoginCallback() {
 
       completeGoogleLogin()
          .then((user) => {
+            // 취소됐다면 세션도 저장하지 않는다. (저장하면 새로고침 후에 로그인된 상태가 된다.)
             if (cancelled) return;
+            saveMockSession(user, true);
             signIn(user);
             router.replace('/');
          })
