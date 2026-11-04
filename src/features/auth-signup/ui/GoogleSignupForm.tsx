@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useGuestOnly } from '@/entities/user/model/useGuestOnly';
 import { GOOGLE_AUTH_ERROR } from '../model/googleAuthError';
 import { useGoogleProfile } from '../model/useGoogleProfile';
 import { GoogleSignupContent } from './GoogleSignupContent';
@@ -10,6 +11,7 @@ import { GoogleSignupContent } from './GoogleSignupContent';
 // 가입 대기 정보가 없거나 만료되어 불러오지 못하면 처음 화면(/signup)으로 돌려보낸다.
 export function GoogleSignupForm() {
    const router = useRouter();
+   useGuestOnly();
    const state = useGoogleProfile();
 
    useEffect(() => {
@@ -18,7 +20,7 @@ export function GoogleSignupForm() {
 
    if (state.status !== 'ready') {
       return (
-         <p role="status" className="w-full max-w-135 py-24 text-center text-sm text-black/50">
+         <p role="status" className="w-full max-w-135 py-24 mb-8 text-center text-sm text-black/50">
             구글 계정 정보를 불러오는 중이에요
          </p>
       );

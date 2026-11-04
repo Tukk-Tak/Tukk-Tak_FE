@@ -1,7 +1,7 @@
 import { Bell } from 'lucide-react';
-import { UserAvatar } from '@/entities/user/ui/UserAvatar';
 import type { User } from '@/entities/user/types';
 import { Button } from '@/shared/ui/Button';
+import { ProfileMenu } from './ProfileMenu';
 
 export function MemberActions({ user }: { user: User }) {
    return (
@@ -18,14 +18,7 @@ export function MemberActions({ user }: { user: User }) {
             <Bell className="size-4.5 text-black/70" />
             <span className="absolute top-1.5 right-2.5 size-1.5 rounded-full bg-red-500" />
          </button>
-         <button
-            type="button"
-            className="flex cursor-pointer items-center gap-2 rounded-full border border-black/10 bg-white py-1 pr-1 pl-1 sm:pr-4"
-         >
-            <UserAvatar nickname={user.nickname} />
-            {/* 아주 좁은 화면에서는 헤더가 넘치지 않도록 닉네임을 숨기고 아바타만 보인다. */}
-            <span className="hidden text-sm font-medium text-black sm:inline">{user.nickname}</span>
-         </button>
+         <ProfileMenu user={user} />
       </div>
    );
 }
