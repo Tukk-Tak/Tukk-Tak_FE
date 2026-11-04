@@ -12,10 +12,18 @@ export function isValidEmail(email: string) {
 }
 
 // ── 비밀번호 ──
+// 특수문자로 인정하는 ASCII 문자 32개. 한글, 이모지, 공백은 특수문자로 보지 않는다.
+// TODO: 서버가 허용하는 특수문자 범위가 확정되면 이 집합만 맞춘다.
+const SPECIAL_CHARACTER_PATTERN = /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/;
+
 const PASSWORD_RULES = [
    { id: 'letter', label: '영문 포함', test: (value: string) => /[A-Za-z]/.test(value) },
    { id: 'number', label: '숫자 포함', test: (value: string) => /\d/.test(value) },
-   { id: 'special', label: '특수문자 포함', test: (value: string) => /[^A-Za-z0-9\s]/.test(value) },
+   {
+      id: 'special',
+      label: '특수문자 포함',
+      test: (value: string) => SPECIAL_CHARACTER_PATTERN.test(value),
+   },
    {
       id: 'length',
       label: '8~16자',
@@ -76,7 +84,14 @@ function todayString() {
 
 export function isValidOpenDate(value: string) {
    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-   if (Number.isNaN(new Date(`${value}T00:00:00`).getTime())) return false;
+
+   const date = new Date(`${value}T00:00:00`);
+   if (Number.isNaN(date.getTime())) return false;
+   // Date는 2023-02-30 같은 날짜를 3월 2일로 자동 보정하므로, 입력한 연·월·일과 같은지 다시 확인한다.
+   const [year, month, day] = value.split('-').map(Number);
+   if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) {
+      return false;
+   }
    // 같은 형식의 문자열은 사전순 비교가 곧 날짜순 비교다. 미래 날짜는 개업일자가 될 수 없다.
    return value >= '1900-01-01' && value <= todayString();
 }

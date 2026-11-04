@@ -5,7 +5,10 @@ export default function AuthLayout({ children }: Readonly<{ children: React.Reac
    return (
       <div className="flex min-h-[calc(100vh-4rem)]">
          <AuthIntro />
-         <main className="flex flex-1 justify-center bg-white px-[4%] py-10">{children}</main>
+         {/* min-w-0: 내용이 넓어도 좁은 화면에서 main이 화면보다 커지지 않고 줄어들게 한다. */}
+         <main className="flex min-w-0 flex-1 justify-center bg-white px-[4%] py-10">
+            {children}
+         </main>
       </div>
    );
 }

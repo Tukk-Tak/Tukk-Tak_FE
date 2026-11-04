@@ -49,7 +49,8 @@ export function EmailVerification({ email, onEmailChange, verification }: EmailV
                         autoComplete="email"
                         placeholder="이메일 주소를 입력해주세요"
                         value={email}
-                        readOnly={sent || verified}
+                        // 전송 중에 이메일을 바꾸면 이전 이메일의 응답이 새 이메일에 적용될 수 있어 잠근다.
+                        readOnly={verification.sending || sent || verified}
                         invalid={emailInvalid}
                         aria-describedby="email-message"
                         className={verified ? 'pr-28' : ''}
@@ -113,7 +114,8 @@ export function EmailVerification({ email, onEmailChange, verification }: EmailV
 
          {sent && (
             <FormField label="인증번호" htmlFor="email-code-0" required>
-               <div className="flex items-center justify-between gap-3">
+               {/* 좁은 화면(320~360px)에서는 확인 버튼이 다음 줄로 내려가도록 줄바꿈을 허용한다. */}
+               <div className="flex flex-wrap items-center justify-between gap-3">
                   <OtpInput
                      idPrefix="email-code"
                      label="인증번호"
@@ -126,11 +128,13 @@ export function EmailVerification({ email, onEmailChange, verification }: EmailV
                   <Button
                      variant="outline"
                      size="field"
-                     className="w-20"
+                     className="ml-auto w-20"
+                     // 인증번호 재발송이 진행 중일 때는 이전 번호로 확인하지 못하게 막는다.
                      disabled={
                         verification.code.length !== CODE_LENGTH ||
                         expired ||
-                        verification.verifying
+                        verification.verifying ||
+                        verification.sending
                      }
                      onClick={() => verification.confirmCode(email)}
                   >
@@ -149,7 +153,8 @@ export function EmailVerification({ email, onEmailChange, verification }: EmailV
                   </span>
                   <button
                      type="button"
-                     disabled={verification.sending}
+                     // 확인이 진행 중일 때 재발송하면 인증을 마친 상태가 되돌려질 수 있어 막는다.
+                     disabled={verification.sending || verification.verifying}
                      onClick={() => verification.requestCode(email)}
                      className="cursor-pointer text-brand-orange disabled:cursor-not-allowed disabled:opacity-50"
                   >

@@ -122,7 +122,7 @@ export function OtpInput({
                onKeyDown={(event) => handleKeyDown(index, event)}
                onPaste={handlePaste}
                onFocus={(event) => handleFocus(index, event.target)}
-               className={`${stateClass} disabled:bg-field-readonly h-11 w-9 rounded-xl border bg-white text-center text-base text-black outline-none sm:w-10`}
+               className={`${stateClass} disabled:bg-field-readonly h-11 w-8 rounded-xl border bg-white text-center text-base text-black outline-none sm:w-10`}
             />
          ))}
       </div>

@@ -69,21 +69,26 @@ export function useStoreForm({ initialName = '', onEdit }: UseStoreFormOptions =
       !hasStoreInfoErrors &&
       values.agreed;
 
+   // 한글 입력 조합이 끝날 때처럼 같은 값으로 다시 호출되는 경우를 걸러낸다.
+   const hasChanged = (patch: Partial<StoreValues>) =>
+      Object.entries(patch).some(([key, value]) => values[key as keyof StoreValues] !== value);
+
    const handleNameChange = (name: string) => {
       setValue({ name });
       // 대표자명(=이름)이 바뀌면 이전 사업자 인증 결과는 무효다.
-      if (businessVerify.status !== 'idle') businessVerify.reset();
+      // 인증 요청이 진행 중일 때(status가 아직 idle)도 그 응답을 무효로 만들어야 하므로 상태와 상관없이 호출한다.
+      if (hasChanged({ name })) businessVerify.reset();
    };
 
    const handleNicknameChange = (nickname: string) => {
       setValue({ nickname });
-      // 한글 입력 조합이 끝날 때처럼 같은 값으로 다시 호출되는 경우에는 확인 결과를 지우지 않는다.
-      if (nickname !== values.nickname) nicknameCheck.reset();
+      // 같은 값으로 다시 호출되는 경우에는 확인 결과를 지우지 않는다.
+      if (hasChanged({ nickname })) nicknameCheck.reset();
    };
 
    const handleBusinessChange = (patch: Partial<StoreValues>) => {
       setValue(patch);
-      if (businessVerify.status !== 'idle') businessVerify.reset();
+      if (hasChanged(patch)) businessVerify.reset();
    };
 
    const handleVerifyBusiness = () =>
