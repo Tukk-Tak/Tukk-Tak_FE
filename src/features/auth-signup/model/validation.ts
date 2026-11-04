@@ -4,12 +4,7 @@ import type { StoreValues } from '../types';
 
 export const onlyDigits = (value: string) => value.replace(/\D/g, '');
 
-// ── 이메일 ──
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-export function isValidEmail(email: string) {
-   return EMAIL_PATTERN.test(email);
-}
+// 이메일 형식 검사(isValidEmail)는 로그인과 함께 쓰므로 shared/lib에 있다.
 
 // ── 비밀번호 ──
 // 특수문자로 인정하는 ASCII 문자 32개. 한글, 이모지, 공백은 특수문자로 보지 않는다.

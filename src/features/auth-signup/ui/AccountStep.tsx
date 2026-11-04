@@ -1,12 +1,12 @@
 'use client';
 
 import type { FormEvent } from 'react';
+import { useGoogleAuthStart } from '@/shared/lib/useGoogleAuthStart';
 import { Button } from '@/shared/ui/Button';
 import { GoogleButton } from '@/shared/ui/GoogleButton';
 import { OrDivider } from '@/shared/ui/OrDivider';
 import { GOOGLE_AUTH_ERROR, type GoogleAuthError } from '../model/googleAuthError';
 import type { EmailVerificationState } from '../model/useEmailVerification';
-import { useGoogleSignupStart } from '../model/useGoogleSignupStart';
 import { checkPasswordRules } from '../model/validation';
 import type { AccountValues } from '../types';
 import { EmailVerification } from './EmailVerification';
@@ -30,7 +30,7 @@ export function AccountStep({
    onChange,
    onNext,
 }: AccountStepProps) {
-   const googleStart = useGoogleSignupStart();
+   const googleStart = useGoogleAuthStart('signup');
    // 이동을 시작하는 데 실패한 경우는 "연결 실패"로 보여준다.
    const shownGoogleError = googleStart.failed ? GOOGLE_AUTH_ERROR.FAILED : googleError;
 

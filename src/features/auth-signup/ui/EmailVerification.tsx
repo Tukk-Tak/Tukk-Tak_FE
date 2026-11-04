@@ -3,6 +3,7 @@
 import { Check } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { isValidEmail } from '@/shared/lib/isValidEmail';
 import { Button } from '@/shared/ui/Button';
 import { FieldMessage } from '@/shared/ui/FieldMessage';
 import { FormField } from '@/shared/ui/FormField';
@@ -10,7 +11,6 @@ import { Input } from '@/shared/ui/Input';
 import { OtpInput } from '@/shared/ui/OtpInput';
 import { SIGNUP_ERROR } from '../model/errorCodes';
 import type { EmailVerificationState } from '../model/useEmailVerification';
-import { isValidEmail } from '../model/validation';
 
 const CODE_LENGTH = 6;
 
@@ -88,7 +88,7 @@ export function EmailVerification({ email, onEmailChange, verification }: EmailV
                   {sendError.code === SIGNUP_ERROR.EMAIL_ALREADY_REGISTERED && (
                      <>
                         {' · '}
-                        <Link href="/login" className="cursor-pointer underline">
+                        <Link href="/login" className="cursor-pointer underline underline-offset-4">
                            로그인하기
                         </Link>
                      </>
@@ -104,7 +104,7 @@ export function EmailVerification({ email, onEmailChange, verification }: EmailV
                   <button
                      type="button"
                      onClick={verification.reset}
-                     className="cursor-pointer text-brand-orange underline"
+                     className="cursor-pointer text-brand-orange underline underline-offset-4"
                   >
                      이메일 변경
                   </button>

@@ -2,11 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
+import { useGoogleAuthStart } from '@/shared/lib/useGoogleAuthStart';
 import { useSingleFlight } from '@/shared/lib/useSingleFlight';
 import { Button } from '@/shared/ui/Button';
 import { FieldMessage } from '@/shared/ui/FieldMessage';
 import { cancelGoogleSignup } from '../api/cancelGoogleSignup';
-import { useGoogleSignupStart } from '../model/useGoogleSignupStart';
 import { useSignupSubmit } from '../model/useSignupSubmit';
 import { useStoreForm } from '../model/useStoreForm';
 import type { GoogleProfile } from '../types';
@@ -19,7 +19,7 @@ export function GoogleSignupContent({ profile }: { profile: GoogleProfile }) {
    const router = useRouter();
    const signupSubmit = useSignupSubmit();
    const form = useStoreForm({ initialName: profile.name, onEdit: signupSubmit.clearError });
-   const googleStart = useGoogleSignupStart();
+   const googleStart = useGoogleAuthStart('signup');
    const { run: runCancel, pending: cancelling } = useSingleFlight();
 
    const canSubmit = form.isValid && !signupSubmit.submitting && !cancelling;
@@ -80,7 +80,7 @@ export function GoogleSignupContent({ profile }: { profile: GoogleProfile }) {
             type="button"
             disabled={cancelling || signupSubmit.submitting}
             onClick={handleCancel}
-            className="mx-auto mt-4 block cursor-pointer text-xs font-medium text-black/70 not-disabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="mx-auto mt-4 mb-5 block cursor-pointer text-xs font-medium text-black/70 hover:underline underline-offset-4 not-disabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
          >
             가입 취소
          </button>

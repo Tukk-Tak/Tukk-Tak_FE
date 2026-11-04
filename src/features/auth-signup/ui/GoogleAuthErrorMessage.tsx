@@ -9,7 +9,7 @@ export function GoogleAuthErrorMessage({ error }: { error: GoogleAuthError }) {
          {error === GOOGLE_AUTH_ERROR.REGISTERED && (
             <>
                이미 가입된 구글 계정이에요{' · '}
-               <Link href="/login" className="cursor-pointer underline">
+               <Link href="/login" className="cursor-pointer underline underline-offset-4">
                   로그인하기
                </Link>
             </>

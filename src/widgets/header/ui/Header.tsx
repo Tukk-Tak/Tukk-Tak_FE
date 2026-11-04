@@ -1,14 +1,11 @@
-import type { User } from '@/entities/user/types';
-import { GuestActions } from './GuestActions';
 import { HeaderLogo } from './HeaderLogo';
 import { HeaderNav } from './HeaderNav';
-import { MemberActions } from './MemberActions';
-import { MobileMenu } from './MobileMenu';
+import { HeaderSession } from './HeaderSession';
 
 // 스크롤해도 화면 위에 고정된다. (sticky라 자리를 차지해서 본문에 별도 여백이 필요 없다)
-// user가 null이면 로그인 전. 세션 연동 전까지는 호출하는 쪽에서 값을 넘긴다.
+// 오른쪽 영역은 로그인 상태에 따라 달라지므로 HeaderSession(클라이언트)이 맡는다.
 // md 미만에서는 nav를 숨기고 MobileMenu(햄버거)로 대신한다. 로그인/회원가입 버튼은 모바일에서도 밖에 둔다.
-export function Header({ user }: { user: User | null }) {
+export function Header() {
    return (
       <header className="sticky top-0 z-50 h-16 border-b border-brand-line bg-white">
          <div className="mx-auto flex h-full max-w-full items-center justify-between px-[4%]">
@@ -18,10 +15,7 @@ export function Header({ user }: { user: User | null }) {
                   <HeaderNav />
                </div>
             </div>
-            <div className="flex items-center gap-3">
-               {user ? <MemberActions user={user} /> : <GuestActions />}
-               <MobileMenu user={user} />
-            </div>
+            <HeaderSession />
          </div>
       </header>
    );
