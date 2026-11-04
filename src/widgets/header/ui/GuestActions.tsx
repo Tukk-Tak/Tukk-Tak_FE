@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Button } from '@/shared/ui/Button';
+import { ButtonLink } from '@/shared/ui/ButtonLink';
 
 export function GuestActions() {
    return (
@@ -10,7 +10,7 @@ export function GuestActions() {
          >
             로그인
          </Link>
-         <Button>회원가입</Button>
+         <ButtonLink href="/signup">회원가입</ButtonLink>
       </div>
    );
 }

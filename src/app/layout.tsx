@@ -31,7 +31,7 @@ export default function RootLayout({
       <html lang="ko" className={`${notoSansKr.variable} ${outfit.variable}`}>
          <body>
             {/* 세션 연동 전 임시값. 로그인 기능이 생기면 실제 사용자 정보로 교체한다. */}
-            <Header user={{ nickname: '맛있는분식' }} />
+            <Header user={null} />
             {children}
          </body>
       </html>
