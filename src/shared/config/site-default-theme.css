@@ -1,0 +1,18 @@
+/*
+ * 사용자 사이트의 테마 변수(--site-*)를 Tailwind 유틸리티로 쓰기 위한 연결 파일.
+ *
+ * - --site-* 값은 실행 중에 SiteRenderer 래퍼가 주입한다. (src/entities/site/model/theme.ts)
+ *   기본값도 그곳의 DEFAULT_THEME 이 갖고 있고, 이 파일은 이름만 연결한다.
+ * - 값이 사용하는 시점에 풀려야 하므로 inline 으로 둔다.
+ *   예) bg-site-bg, text-site-text, border-site-border, bg-site-primary
+ * - 뚝딱 서비스 화면의 토큰은 tokens.css 이다. 이 파일은 사용자 사이트 전용이다.
+ */
+
+@theme inline {
+   --color-site-bg: var(--site-bg);
+   --color-site-text: var(--site-text);
+   --color-site-text-muted: var(--site-text-muted);
+   --color-site-border: var(--site-border);
+   --color-site-primary: var(--site-primary);
+   --color-site-on-primary: var(--site-on-primary);
+}
