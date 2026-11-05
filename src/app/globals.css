@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '../shared/config/tokens.css';
+@import '../shared/config/site-default-theme.css';
 
 /*
  * 요소 선택자 규칙은 반드시 @layer base 안에 둔다.
