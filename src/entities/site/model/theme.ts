@@ -21,11 +21,17 @@ const CSS_VAR_NAME: Record<keyof ThemeConfig, string> = {
    onPrimary: '--site-on-primary',
 };
 
-// 사이트 래퍼의 style에 넣을 CSS 변수들. 빠진 키는 기본값으로 채운다.
+// 색 값은 #rgb, #rgba, #rrggbb, #rrggbbaa 형식만 허용한다.
+// 서버 렌더링 때 값이 style 속성에 그대로 들어가므로, 세미콜론 등이 섞인 값으로 다른 CSS가 끼어드는 것을 막는다.
+const HEX_COLOR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+// 사이트 래퍼의 style에 넣을 CSS 변수들. 빠졌거나 색 형식이 아닌 값은 기본값으로 채운다.
 export function themeToCssVars(theme: ThemeConfig): CSSProperties {
    const vars: Record<string, string> = {};
    for (const key of Object.keys(CSS_VAR_NAME) as (keyof ThemeConfig)[]) {
-      vars[CSS_VAR_NAME[key]] = theme[key] ?? DEFAULT_THEME[key];
+      const value = theme[key];
+      vars[CSS_VAR_NAME[key]] =
+         value !== undefined && HEX_COLOR.test(value) ? value : DEFAULT_THEME[key];
    }
    return vars as CSSProperties;
 }
