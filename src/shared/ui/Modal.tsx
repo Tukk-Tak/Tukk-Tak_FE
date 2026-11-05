@@ -59,6 +59,12 @@ export function Modal({
          const first = focusable[0];
          const last = focusable[focusable.length - 1];
          const active = document.activeElement;
+         // 포커스가 모달 밖에 있으면(예: 포커스된 버튼이 비활성화되어 포커스가 body로 빠졌을 때) 모달 안으로 되돌린다.
+         if (!active || !dialog.contains(active)) {
+            event.preventDefault();
+            (event.shiftKey ? last : first).focus();
+            return;
+         }
          if (event.shiftKey && (active === first || active === dialog)) {
             event.preventDefault();
             last.focus();
@@ -94,7 +100,7 @@ export function Modal({
                type="button"
                aria-label="닫기"
                onClick={() => closeRef.current()}
-               className="absolute top-5 right-5 flex size-8 cursor-pointer items-center justify-center rounded-full text-black/60 hover:bg-black/5 hover:text-black"
+               className="absolute top-5 right-5 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full text-black/60 hover:bg-black/5 hover:text-black"
             >
                <X className="size-5" />
             </button>

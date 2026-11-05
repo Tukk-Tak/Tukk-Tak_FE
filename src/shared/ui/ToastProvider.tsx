@@ -33,7 +33,7 @@ function ToastView({ toast, onClose }: { toast: ToastItem; onClose: (id: number)
          className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border border-brand-line bg-white px-4 py-3 text-sm text-black shadow-card"
       >
          {TONE_ICON[toast.tone]}
-         <p className="min-w-0 flex-1 break-keep">{toast.message}</p>
+         <p className="min-w-0 flex-1 break-keep whitespace-pre-line">{toast.message}</p>
          <button
             type="button"
             aria-label="알림 닫기"

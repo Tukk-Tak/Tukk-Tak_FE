@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePlan } from '@/entities/plan';
 import { useSession } from '@/entities/user/model/useSession';
-import { CheckoutModal } from '@/features/plan-checkout';
+import { PaymentModal } from '@/features/plan-checkout';
 import type { PaidPlanName, PlanName } from '@/shared/config/plans';
 import { PaymentNotice } from './PaymentNotice';
 import { PlanCard, type PlanCardState } from './PlanCard';
@@ -61,7 +61,7 @@ export function PricingPlans() {
          <PaymentNotice />
 
          {checkoutTier && (
-            <CheckoutModal tier={checkoutTier} onClose={() => setCheckoutTier(null)} />
+            <PaymentModal tier={checkoutTier} onClose={() => setCheckoutTier(null)} />
          )}
       </section>
    );

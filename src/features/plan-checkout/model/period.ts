@@ -14,9 +14,9 @@ export function clampMonths(months: number): number {
    return Math.min(MAX_MONTHS, Math.max(MIN_MONTHS, Math.trunc(months)));
 }
 
-// 이용 시작일은 결제하는 오늘(한국 시간)이고, 종료일은 N개월 뒤 같은 날이다.
-export function getPeriod(months: number): { start: YmdDate; end: YmdDate } {
-   const start = getTodayKst();
+// 이용 시작일은 따로 정하지 않으면 결제하는 오늘(한국 시간)이고, 종료일은 N개월 뒤 같은 날이다.
+export function getPeriod(months: number, startDate?: YmdDate): { start: YmdDate; end: YmdDate } {
+   const start = startDate ?? getTodayKst();
    return { start, end: addMonths(start, months) };
 }
 

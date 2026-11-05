@@ -169,16 +169,22 @@ export function PlanCard({
             ))}
          </ul>
 
-         <div className="mt-auto pt-10">
-            {state === 'current' && expiry && (
-               <p className="mb-3 text-center text-xs text-black/60">
-                  {formatDotDate(expiry)}까지 이용할 수 있어요 ·{' '}
-                  {/* TODO: 마이페이지 경로가 정해지면 맞춘다. (결제 내역에서 연장한다.) */}
-                  <Link href="/mypage" className="font-bold text-brand-orange hover:underline">
-                     결제 내역·연장 보기
-                  </Link>
-               </p>
-            )}
+         {state === 'current' && expiry && (
+            // 기능 목록 바로 아래에 붙인다. (버튼 위에 두면 목록과 사이가 크게 벌어진다.)
+            // 한 줄에 이어 쓰면 카드 폭에서 어색하게 끊겨서, 만료일과 링크를 두 줄로 나눈다.
+            <p className="mt-5 space-y-1 text-center text-xs text-black/60">
+               <span className="block">{formatDotDate(expiry)}까지 이용할 수 있어요</span>
+               {/* TODO: 마이페이지 경로가 정해지면 맞춘다. (결제 내역에서 연장한다.) */}
+               <Link
+                  href="/mypage"
+                  className="block font-bold text-brand-orange underline-offset-2 hover:underline"
+               >
+                  결제 내역·연장 보기
+               </Link>
+            </p>
+         )}
+
+         <div className="mt-auto pt-5">
             <PlanAction tier={tier} highlighted={highlighted} state={state} onStart={onStart} />
          </div>
       </article>

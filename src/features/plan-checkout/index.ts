@@ -1,1 +1,1 @@
-export { CheckoutModal } from './ui/CheckoutModal';
+export { PaymentModal } from './ui/PaymentModal';
