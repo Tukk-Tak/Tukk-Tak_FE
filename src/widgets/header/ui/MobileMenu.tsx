@@ -2,14 +2,16 @@
 
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { User } from '@/entities/user/types';
 import { Button } from '@/shared/ui/Button';
-import { NAV_ITEMS } from './HeaderNav';
+import { isActiveNav, NAV_ITEMS } from './HeaderNav';
 
 // md 미만에서만 보이는 햄버거 메뉴. 데스크톱 헤더에서 숨겨진 nav와 "사이트 만들기"를 한 패널에 모은다.
 export function MobileMenu({ user }: { user: User | null }) {
    const [open, setOpen] = useState(false);
+   const pathname = usePathname();
 
    useEffect(() => {
       if (!open) return;
@@ -47,16 +49,22 @@ export function MobileMenu({ user }: { user: User | null }) {
                aria-label="모바일 메뉴"
                className="border-brand-line shadow-card absolute inset-x-0 top-full flex flex-col border-b bg-white px-[4%] py-4"
             >
-               {NAV_ITEMS.map(({ label, href }) => (
-                  <Link
-                     key={href}
-                     href={href}
-                     onClick={close}
-                     className="cursor-pointer py-3 text-sm font-semibold text-black/70 hover:text-brand-orange"
-                  >
-                     {label}
-                  </Link>
-               ))}
+               {NAV_ITEMS.map(({ label, href }) => {
+                  const active = isActiveNav(pathname, href);
+                  return (
+                     <Link
+                        key={href}
+                        href={href}
+                        onClick={close}
+                        aria-current={active ? 'page' : undefined}
+                        className={`cursor-pointer py-3 text-sm font-semibold hover:text-brand-orange ${
+                           active ? 'text-brand-orange' : 'text-black/70'
+                        }`}
+                     >
+                        {label}
+                     </Link>
+                  );
+               })}
 
                {user && (
                   <div className="border-brand-line mt-2 border-t pt-4">

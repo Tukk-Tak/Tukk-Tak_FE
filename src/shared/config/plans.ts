@@ -11,6 +11,14 @@ export interface PlanLimits {
    siteSaveLimit: number;
 }
 
+// 유료 플랜의 월 가격(원). 결제 금액은 화면에서 계산해 보여 주지만, 실제 연동 때는 서버가 다시 계산한다.
+export type PaidPlanName = Exclude<PlanName, 'FREE'>;
+
+export const PLAN_MONTHLY_PRICE: Record<PaidPlanName, number> = {
+   BASIC: 9900,
+   PREMIUM: 19900,
+};
+
 export const PLAN_LIMITS: Record<PlanName, PlanLimits> = {
    FREE: { aiUsagePerMonth: 1, siteDeployLimit: 0, siteSaveLimit: 3 },
    BASIC: { aiUsagePerMonth: 3, siteDeployLimit: 1, siteSaveLimit: 5 },
