@@ -133,6 +133,21 @@ app/
 
 `(dashboard)` 그룹에 미들웨어로 로그인 체크를 일괄 적용할 때 유용합니다.
 
+**서비스 헤더 유무로도 그룹을 나눕니다.** 루트 `app/layout.tsx`에는 `<html>`, 폰트, `ToastProvider`만 두고 서비스 헤더는 넣지 않습니다. 헤더가 있는 화면(메인, 요금제, 로그인·회원가입 등)은 `app/(main)/` 아래에 두고, `app/(main)/layout.tsx`가 헤더를 렌더링합니다. 헤더가 없는 화면(에디터, 배포된 사이트 등)은 `(main)` 밖의 별도 그룹에 둡니다.
+
+```
+app/
+  layout.tsx          ← html, body, 폰트, ToastProvider만
+  (main)/
+    layout.tsx        ← <Header /> + children (화면 높이를 헤더와 본문이 나눠 가짐)
+    page.tsx
+    pricing/page.tsx
+    (auth)/...        ← 로그인·회원가입
+  (editor)/ ...       ← 헤더 없음 (별도 레이아웃)
+```
+
+`(main)` 안의 페이지는 헤더 높이를 직접 계산(`calc(100dvh-4rem)`)하지 않고, 최상위 요소에 `h-full`만 씁니다. 헤더 높이가 바뀌어도 페이지를 고치지 않기 위해서입니다.
+
 ## 7. AI 어시스턴트를 위한 체크리스트
 
 새 파일을 만들거나 기존 파일을 옮길 때 아래를 확인하세요.
