@@ -136,7 +136,7 @@ export function WritePostForm() {
          {confirmingCancel && (
             <ConfirmModal
                title="작성을 취소할까요?"
-               description="쓰던 내용은 저장되지 않고 사라져요."
+               description="지금 나가면 작성한 내용이 사라져요."
                confirmLabel="나가기"
                cancelLabel="계속 작성"
                onConfirm={() => router.push(COMMUNITY_PATH)}
