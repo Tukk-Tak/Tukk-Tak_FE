@@ -118,6 +118,13 @@ export function WritePostForm() {
                </FieldMessage>
             )}
 
+            {/* 등록 버튼이 왜 잠겨 있는지 버튼 가까이에서도 알려 준다. (사진이 위쪽에 있어 스크롤하면 안 보일 수 있다.) */}
+            {post.photo.uploading && (
+               <p role="status" className="mt-4 text-right text-xs text-black/50">
+                  사진을 올리는 중이에요. 끝나면 등록할 수 있어요.
+               </p>
+            )}
+
             <div className="mt-6 flex justify-end gap-3">
                <Button
                   variant="outline"
