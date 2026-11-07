@@ -89,7 +89,7 @@ app → widgets → features → entities → shared
 // app/(editor)/editor/[siteId]/page.tsx
 // ⚠️ 이 파일에는 상태 관리나 API 호출 로직을 직접 작성하지 않습니다. 조립만 합니다.
 
-import { getSite } from "@/entities/site";
+import { getSite, getSiteTitle } from "@/entities/site";
 import { EditorLayout } from "@/widgets/editor-layout";
 import { SiteRenderer } from "@/widgets/site-renderer";
 
@@ -99,7 +99,7 @@ export default async function EditorPage({ params }: { params: Promise<{ siteId:
   const site = await getSite(siteId); // 목업 단계에서는 entities/site/api의 목업 함수
 
   return (
-    <EditorLayout>
+    <EditorLayout siteName={getSiteTitle(site)}>
       <SiteRenderer site={site} />
     </EditorLayout>
   );
