@@ -10,6 +10,8 @@ interface ModalProps {
    onClose: () => void;
    // 입력 중인 값을 잃지 않도록 배경을 눌러도 닫히지 않는 것이 기본이다. (Esc와 X 버튼은 항상 닫는다.)
    closeOnBackdrop?: boolean;
+   // 모달 안에 닫는 버튼이 이미 있으면(예: 확인 모달의 "계속 작성") X 버튼을 숨길 수 있다. Esc로는 여전히 닫힌다.
+   showCloseButton?: boolean;
    className?: string;
    children: ReactNode;
 }
@@ -23,6 +25,7 @@ export function Modal({
    titleId,
    onClose,
    closeOnBackdrop = false,
+   showCloseButton = true,
    className = '',
    children,
 }: ModalProps) {
@@ -96,14 +99,16 @@ export function Modal({
             tabIndex={-1}
             className={`relative my-auto w-full rounded-2xl bg-white shadow-card outline-none ${className}`}
          >
-            <button
-               type="button"
-               aria-label="닫기"
-               onClick={() => closeRef.current()}
-               className="absolute top-5 right-5 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full text-black/60 hover:bg-black/5 hover:text-black"
-            >
-               <X className="size-5" />
-            </button>
+            {showCloseButton && (
+               <button
+                  type="button"
+                  aria-label="닫기"
+                  onClick={() => closeRef.current()}
+                  className="absolute top-5 right-5 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full text-black/60 hover:bg-black/5 hover:text-black"
+               >
+                  <X className="size-5" />
+               </button>
+            )}
             {children}
          </div>
       </div>,
