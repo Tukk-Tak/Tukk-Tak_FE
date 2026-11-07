@@ -10,16 +10,16 @@ const BENEFITS = [
 ];
 
 // 회원가입과 로그인 페이지가 함께 쓰는 왼쪽 소개 패널. 좁은 화면에서는 폼에 집중하도록 숨긴다.
-// 오른쪽 폼이 길어 스크롤되어도 이 패널은 헤더 아래 화면에 고정되고, 내용 전체가 한 화면에 보여야 한다.
-// 그래서 높이는 화면 높이에 맞추고, 세로 여백과 이미지 크기는 vh, 좌우 여백과 글자 크기는 vw 기준으로 줄어들게 했다.
+// 오른쪽 폼이 길어 스크롤되어도 이 패널은 움직이지 않고(스크롤은 오른쪽 main만 한다), 내용 전체가 한 화면에 보여야 한다.
+// 높이는 부모 레이아웃이 주는 남은 높이를 그대로 쓰고, 세로 여백과 이미지 크기는 vh, 좌우 여백과 글자 크기는 vw 기준으로 줄어들게 했다.
 // (패널 너비가 화면의 39%라 좁은 화면에서는 글이 들어갈 폭이 줄어 줄바꿈이 늘고 세로로 길어지기 때문)
 // 패널 너비는 %가 아니라 vw로 정한다. %는 세로 스크롤바를 뺀 영역 기준이라, 오른쪽 폼이 길어
 // 스크롤바가 생기는 페이지(구글 가입, 이메일 가입 2단계 등)에서만 패널이 6px쯤 좁아지기 때문이다.
 // 그래도 화면 높이가 560px 미만이면 가게 카드 영역을 숨기고, overflow-y-auto는 그보다 낮은 극단적인 화면을 위한 안전장치다.
 export function AuthIntro() {
    return (
-      <aside className="bg-brand-orange-light sticky top-16 hidden h-[calc(100vh-4rem)] flex-col justify-between self-start overflow-x-hidden overflow-y-auto px-[clamp(1.5rem,5vw,5rem)] pt-[clamp(1.5rem,4.5vh,2.5rem)] pb-[clamp(1.5rem,9vh,5rem)] lg:flex lg:w-[39vw] lg:shrink-0">
-         {/* 패널 오른쪽 위 모서리에 걸친 장식 원 */}
+      <aside className="bg-brand-orange-light relative hidden flex-col justify-between overflow-x-hidden overflow-y-auto px-[clamp(1.5rem,5vw,5rem)] pt-[clamp(1.5rem,4.5vh,2.5rem)] pb-[clamp(1.5rem,9vh,5rem)] lg:flex lg:w-[39vw] lg:shrink-0">
+         {/* 패널 오른쪽 위 모서리에 걸친 장식 원. aside가 relative라서 패널을 기준으로 놓이고, overflow로 패널 밖은 잘린다. */}
          <span
             aria-hidden
             className="pointer-events-none absolute -top-[182px] -right-[182px] size-[364px] rounded-full border-[6px] border-white/40"

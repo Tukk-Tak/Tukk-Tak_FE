@@ -2,7 +2,6 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Noto_Sans_KR, Outfit } from 'next/font/google';
 import { ToastProvider } from '@/shared/ui/ToastProvider';
-import { Header } from '@/widgets/header';
 
 // 한글 글리프는 unicode-range 단위로 필요한 조각만 내려받는다.
 const notoSansKr = Noto_Sans_KR({
@@ -31,10 +30,7 @@ export default function RootLayout({
    return (
       <html lang="ko" className={`${notoSansKr.variable} ${outfit.variable}`}>
          <body>
-            <ToastProvider>
-               <Header />
-               {children}
-            </ToastProvider>
+            <ToastProvider>{children}</ToastProvider>
          </body>
       </html>
    );

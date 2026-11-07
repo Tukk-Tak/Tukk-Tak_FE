@@ -119,19 +119,28 @@ export default function PublicSitePage({ params }: { params: { slug: string } })
 
 ## 6. 라우트 그룹 (선택)
 
-로그인 필요 여부에 따라 `app/` 하위를 라우트 그룹으로 묶을 수 있습니다. URL에는 영향을 주지 않습니다.
+`app/` 하위를 라우트 그룹(괄호 폴더)으로 묶을 수 있습니다. URL에는 영향을 주지 않습니다. 레이아웃을 나누거나, 로그인 필요 여부처럼 공통 규칙(예: 미들웨어로 로그인 체크를 일괄 적용)을 한 그룹에 거는 데 씁니다.
+
+**서비스 헤더 유무로 그룹을 나눕니다.** 루트 `app/layout.tsx`에는 `<html>`, 폰트, `ToastProvider`만 두고 서비스 헤더는 넣지 않습니다. 헤더가 있는 화면(메인, 요금제, 로그인·회원가입 등)은 `app/(main)/` 아래에 두고, `app/(main)/layout.tsx`가 헤더를 렌더링합니다. 헤더가 없는 화면(에디터, 배포된 사이트 등)은 `(main)` 밖의 별도 그룹에 둡니다.
 
 ```
 app/
-  (auth)/
-    signup/page.tsx
-    login/page.tsx
-  (dashboard)/
-    mypage/edit/page.tsx
+  layout.tsx          ← html, body, 폰트, ToastProvider만
+  (main)/
+    layout.tsx        ← <Header /> + children (화면 높이를 헤더와 본문이 나눠 가짐)
+    page.tsx
+    pricing/page.tsx
+    (auth)/           ← 로그인·회원가입
+      login/page.tsx
+      signup/page.tsx
+    (dashboard)/      ← 로그인이 필요한 화면(마이페이지 등)을 묶을 때. 미들웨어로 로그인 체크를 일괄 적용
+      mypage/edit/page.tsx
+  (editor)/           ← 헤더 없음 (별도 레이아웃)
     editor/[siteId]/page.tsx
+  not-found.tsx       ← 루트 404. 헤더가 없는 화면과 함께 쓰므로 홈으로 가는 링크를 직접 둠
 ```
 
-`(dashboard)` 그룹에 미들웨어로 로그인 체크를 일괄 적용할 때 유용합니다.
+`(main)` 안의 페이지는 헤더 높이를 직접 계산(`calc(100dvh-4rem)`)하지 않고, 최상위 요소에 `h-full`만 씁니다. 헤더 높이가 바뀌어도 페이지를 고치지 않기 위해서입니다.
 
 ## 7. AI 어시스턴트를 위한 체크리스트
 

@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
    return (
-      // 헤더 높이(h-16)를 뺀 높이로 고정하고 이 main만 스크롤한다. (다른 페이지와 같은 구조)
-      <main className="bg-brand-cream relative h-[calc(100dvh-4rem)] overflow-y-auto">
+      // 헤더를 뺀 남은 높이를 모두 쓰고(h-full), 이 main만 스크롤한다. (다른 페이지와 같은 구조)
+      <main className="bg-brand-cream relative h-full overflow-y-auto">
          <PricingPlans />
       </main>
    );
