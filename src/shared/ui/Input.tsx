@@ -1,6 +1,7 @@
-import type { InputHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+// ComponentProps는 ref까지 포함한다. (React 19는 함수 컴포넌트도 ref를 prop으로 받는다.)
+export interface InputProps extends ComponentProps<'input'> {
    invalid?: boolean;
 }
 
