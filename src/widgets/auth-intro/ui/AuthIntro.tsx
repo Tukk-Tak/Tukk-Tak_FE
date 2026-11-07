@@ -18,8 +18,8 @@ const BENEFITS = [
 // 그래도 화면 높이가 560px 미만이면 가게 카드 영역을 숨기고, overflow-y-auto는 그보다 낮은 극단적인 화면을 위한 안전장치다.
 export function AuthIntro() {
    return (
-      <aside className="bg-brand-orange-light hidden flex-col justify-between overflow-x-hidden overflow-y-auto px-[clamp(1.5rem,5vw,5rem)] pt-[clamp(1.5rem,4.5vh,2.5rem)] pb-[clamp(1.5rem,9vh,5rem)] lg:flex lg:w-[39vw] lg:shrink-0">
-         {/* 패널 오른쪽 위 모서리에 걸친 장식 원 */}
+      <aside className="bg-brand-orange-light relative hidden flex-col justify-between overflow-x-hidden overflow-y-auto px-[clamp(1.5rem,5vw,5rem)] pt-[clamp(1.5rem,4.5vh,2.5rem)] pb-[clamp(1.5rem,9vh,5rem)] lg:flex lg:w-[39vw] lg:shrink-0">
+         {/* 패널 오른쪽 위 모서리에 걸친 장식 원. aside가 relative라서 패널을 기준으로 놓이고, overflow로 패널 밖은 잘린다. */}
          <span
             aria-hidden
             className="pointer-events-none absolute -top-[182px] -right-[182px] size-[364px] rounded-full border-[6px] border-white/40"
