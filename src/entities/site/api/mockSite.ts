@@ -97,6 +97,8 @@ export const MOCK_SITE: SiteContent = {
                   brandName: '카페 오롯',
                   address: '서울시 마포구 동교로 12길 8',
                   phone: '02-123-4567',
+                  hours: '매일 10:00 - 21:00',
+                  social: [{ kind: 'instagram', url: 'https://instagram.com/cafe_orot' }],
                },
             },
          ],

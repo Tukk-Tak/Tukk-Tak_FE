@@ -1,5 +1,6 @@
 import type { Section } from '../types';
 import { BlockPlaceholder } from './BlockPlaceholder';
+import { FooterBlock } from './footer/FooterBlock';
 import { HeaderBlock } from './header/HeaderBlock';
 import { TextBlock } from './text/TextBlock';
 
@@ -10,6 +11,8 @@ export function BlockRenderer({ section }: { section: Section }) {
          return <HeaderBlock section={section} />;
       case 'text':
          return <TextBlock section={section} />;
+      case 'footer':
+         return <FooterBlock section={section} />;
       default:
          return <BlockPlaceholder section={section} />;
    }
