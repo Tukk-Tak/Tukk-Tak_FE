@@ -1,4 +1,5 @@
 import type { SiteContent } from '../types';
+import { MOCK_IMAGE_URL } from './mockImage';
 
 // 에디터 화면 확인용 목업 사이트. API 연동 때 getSite를 실제 호출로 바꾸면서 함께 없앤다.
 export const MOCK_SITE: SiteContent = {
@@ -40,6 +41,7 @@ export const MOCK_SITE: SiteContent = {
                content: {
                   title: '우리 가게 이야기',
                   body: '2019년 문을 연 이후 매일 아침 원두를 직접 볶고 있어요.',
+                  image: { url: MOCK_IMAGE_URL },
                },
             },
          ],
