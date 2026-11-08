@@ -9,6 +9,7 @@ export interface ThemeConfig {
    border?: string;
    primary?: string;
    onPrimary?: string; // primary 위에 올리는 글자색
+   radius?: string; // 이미지와 카드의 모서리 둥글기. "6px"처럼 숫자와 px로 쓴다.
 }
 
 // 한 줄. 블록 1개(전체 폭) 또는 2개(50:50)
