@@ -5,6 +5,19 @@ const IMAGE = { url: MOCK_IMAGE_URL };
 const BODY =
    '2019년 문을 연 이후 매일 아침 원두를 직접 볶고 있어요.\n좋은 재료가 좋은 맛을 만든다는 마음으로 준비합니다.';
 
+// 푸터의 모든 필드를 채운 샘플. 정보형에서만 보이는 email, businessInfo도 포함한다.
+const FOOTER_CONTENT = {
+   address: '서울시 마포구 동교로 12길 8',
+   phone: '02-123-4567',
+   hours: '매일 10:00 - 21:00',
+   social: [
+      { kind: 'instagram', url: 'https://instagram.com/cafe_orot' },
+      { kind: 'blog', url: 'https://blog.naver.com/cafe_orot' },
+   ],
+   email: 'hello@cafe-orot.kr',
+   businessInfo: { representative: '김오롯', registrationNumber: '123-45-67890' },
+};
+
 // 구현된 블록의 variant를 한 줄씩 모아 보는 목업 (?mock=variants).
 // 블록을 만들 때마다 그 블록의 줄을 아래 두 목록에 추가한다.
 // - 전체 폭: 그 블록의 모든 variant를 한 줄씩 둔다.
@@ -56,6 +69,30 @@ const FULL_WIDTH_ROWS: Row[] = [
             type: 'text',
             variant: 'withImage',
             content: { title: '이미지 병행형 (text / withImage)', body: BODY, image: IMAGE },
+         },
+      ],
+   },
+
+   // 푸터 (두 variant 모두 전체 폭 전용이라 반폭 줄은 없다)
+   {
+      id: 'full-footer-simple',
+      sections: [
+         {
+            id: 'full-footer-simple-1',
+            type: 'footer',
+            variant: 'simple',
+            content: { ...FOOTER_CONTENT, brandName: '심플형 (footer / simple)' },
+         },
+      ],
+   },
+   {
+      id: 'full-footer-info',
+      sections: [
+         {
+            id: 'full-footer-info-1',
+            type: 'footer',
+            variant: 'info',
+            content: { ...FOOTER_CONTENT, brandName: '정보형 (footer / info)' },
          },
       ],
    },

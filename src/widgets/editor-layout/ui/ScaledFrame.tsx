@@ -80,7 +80,7 @@ export function ScaledFrame({ width, children }: { width: number; children: Reac
          >
             <div
                ref={innerRef}
-               className="min-h-[640px] overflow-hidden rounded-lg bg-white shadow-card"
+               className="min-h-160 overflow-hidden rounded-lg bg-white shadow-card"
                style={{
                   width: renderWidth,
                   transform: `scale(${scale})`,

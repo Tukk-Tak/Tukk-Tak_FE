@@ -13,7 +13,7 @@ export function ModeToggle({
    onModeChange: (mode: EditorMode) => void;
 }) {
    return (
-      <div role="group" aria-label="보기 모드" className="bg-[#F5F5F4] flex rounded-md p-1">
+      <div role="group" aria-label="보기 모드" className="bg-field-disabled flex rounded-md p-1">
          {MODES.map(({ value, label }) => (
             <button
                key={value}
