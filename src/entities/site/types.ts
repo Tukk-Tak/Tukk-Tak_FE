@@ -7,6 +7,7 @@ export interface ThemeConfig {
    text?: string;
    textMuted?: string;
    border?: string;
+   surface?: string; // 카드처럼 배경 위에 올라가는 면의 색
    primary?: string;
    onPrimary?: string; // primary 위에 올리는 글자색
    radius?: string; // 이미지와 카드의 모서리 둥글기. "6px"처럼 숫자와 px로 쓴다.

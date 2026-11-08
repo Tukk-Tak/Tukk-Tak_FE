@@ -13,6 +13,7 @@
    --color-site-text: var(--site-text);
    --color-site-text-muted: var(--site-text-muted);
    --color-site-border: var(--site-border);
+   --color-site-surface: var(--site-surface);
    --color-site-primary: var(--site-primary);
    --color-site-on-primary: var(--site-on-primary);
    --radius-site: var(--site-radius);
