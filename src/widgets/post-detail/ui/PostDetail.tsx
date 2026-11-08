@@ -97,7 +97,9 @@ export function PostDetail({ postId }: { postId: string }) {
                </div>
 
                <div className="mt-6 flex items-start justify-between gap-4">
-                  <h1 className="text-2xl font-bold wrap-break-word text-black">{detail.post.title}</h1>
+                  <h1 className="text-2xl font-bold wrap-break-word text-black">
+                     {detail.post.title}
+                  </h1>
                   {detail.post.canDelete && <PostDeleteButton postId={detail.post.id} />}
                </div>
                <p className="mt-2 text-xs text-black/50">

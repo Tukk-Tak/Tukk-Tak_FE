@@ -32,8 +32,11 @@ export function ConfirmModal({
             <h2 id={titleId} className="text-xl font-bold text-black">
                {title}
             </h2>
-            <p className="mt-3 text-sm text-black/60">{description}</p>
-            <div className="mt-10 grid grid-cols-2 gap-2">
+            {/* 설명의 \n은 줄바꿈으로 보여 준다. (문장이 끝나는 곳에서 줄을 나눌 수 있게) */}
+            <p className="mt-3 text-sm break-keep whitespace-pre-line text-black/60">
+               {description}
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-2">
                <Button variant="outline" size="form" onClick={onCancel} className="w-full">
                   {cancelLabel}
                </Button>

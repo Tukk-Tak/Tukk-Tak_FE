@@ -53,7 +53,9 @@ export function PostDeleteButton({ postId }: { postId: string }) {
          {confirming && (
             <ConfirmModal
                title="게시물을 삭제할까요?"
-               description="삭제하면 댓글과 좋아요도 함께 사라져요. 되돌릴 수 없어요."
+               description={
+                  '삭제하면 댓글과 좋아요도 함께 지워져요.\n한 번 지우면 되돌릴 수 없어요.'
+               }
                confirmLabel="삭제하기"
                cancelLabel="취소"
                onConfirm={handleConfirm}
