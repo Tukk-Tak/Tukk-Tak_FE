@@ -4,6 +4,7 @@ import { ArrowLeft, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PostThumbnail, usePostDetail, type MockMode } from '@/entities/post';
+import { CommentCard } from '@/features/community-comment';
 import { LikeButton } from '@/features/community-like';
 import { PostDeleteButton } from '@/features/community-post-delete';
 import { formatDotDate, parseIsoDate } from '@/shared/lib/date';
@@ -12,8 +13,11 @@ import { ButtonLink } from '@/shared/ui/ButtonLink';
 import { PostDetailSkeleton } from './PostDetailSkeleton';
 import { ShareButton } from './ShareButton';
 
-// TODO: 댓글·대댓글 단계에서 오른쪽에 댓글 카드를 붙여 2열로 바꾼다. (지금은 본문만 한 열로 가운데에 둔다.)
-const CONTAINER_CLASS = 'mx-auto w-full max-w-4xl px-[4%] py-8 md:py-10';
+// 큰 화면에서는 왼쪽에 본문, 오른쪽에 댓글 카드(화면에 붙어 있음)를 둔다. 작은 화면에서는 본문 아래에 댓글이 이어진다.
+const CONTAINER_CLASS = 'mx-auto w-full max-w-[75rem] px-[3%] py-8 md:py-10';
+const DETAIL_GRID_CLASS = 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]';
+// 댓글 카드가 "목록으로" 줄 아래, 사진과 같은 높이에서 시작하도록 맞춘 위쪽 여백 (링크 줄 높이 + 사진 위 간격)
+const COMMENT_OFFSET_CLASS = 'lg:pt-12';
 const MOCK_MODES: MockMode[] = ['error', 'slow', 'notfound'];
 
 function BackToList() {
@@ -32,7 +36,6 @@ function BackToList() {
 export function PostDetailFallback() {
    return (
       <section className={CONTAINER_CLASS}>
-         <BackToList />
          <PostDetailSkeleton />
       </section>
    );
@@ -50,7 +53,7 @@ export function PostDetail({ postId }: { postId: string }) {
 
    return (
       <section className={CONTAINER_CLASS}>
-         <BackToList />
+         {(detail.status === 'not-found' || detail.status === 'error') && <BackToList />}
 
          {detail.status === 'loading' && <PostDetailSkeleton />}
 
@@ -74,60 +77,67 @@ export function PostDetail({ postId }: { postId: string }) {
          )}
 
          {detail.status === 'success' && (
-            <article className="mt-6">
-               <PostThumbnail
-                  id={detail.post.id}
-                  thumbnailUrl={detail.post.thumbnailUrl}
-                  className="aspect-21/10 w-full rounded-2xl"
-               />
-
-               <div className="mt-4 flex flex-wrap items-center gap-x-4 border-b border-brand-line pb-3">
-                  <LikeButton
-                     key={detail.post.id}
-                     postId={detail.post.id}
-                     initialLiked={detail.post.liked}
-                     initialCount={detail.post.likeCount}
+            <div className={DETAIL_GRID_CLASS}>
+               <article className="min-w-0">
+                  <BackToList />
+                  <PostThumbnail
+                     id={detail.post.id}
+                     thumbnailUrl={detail.post.thumbnailUrl}
+                     className="mt-6 aspect-21/10 w-full rounded-2xl"
                   />
-                  {/* TODO: 북마크는 지금 표시만 한다. 마이페이지의 북마크 목록과 함께 누르는 기능을 구현한다. (그때 button으로 바꾼다.) */}
-                  <span className="flex items-center gap-2 px-2 py-1.5 text-sm font-semibold text-black/60">
-                     <Bookmark aria-hidden className="size-5" />
-                     북마크
-                  </span>
-                  <ShareButton />
+
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 border-b border-brand-line pb-3">
+                     <LikeButton
+                        key={detail.post.id}
+                        postId={detail.post.id}
+                        initialLiked={detail.post.liked}
+                        initialCount={detail.post.likeCount}
+                     />
+                     {/* TODO: 북마크는 지금 표시만 한다. 마이페이지의 북마크 목록과 함께 누르는 기능을 구현한다. (그때 button으로 바꾼다.) */}
+                     <span className="flex items-center gap-2 px-2 py-1.5 text-sm font-semibold text-black/60">
+                        <Bookmark aria-hidden className="size-5" />
+                        북마크
+                     </span>
+                     <ShareButton />
+                  </div>
+
+                  <div className="mt-6 flex items-start justify-between gap-4">
+                     <h1 className="text-2xl font-bold wrap-break-word text-black">
+                        {detail.post.title}
+                     </h1>
+                     {detail.post.canDelete && <PostDeleteButton postId={detail.post.id} />}
+                  </div>
+                  <p className="mt-2 text-xs text-black/50">
+                     {detail.post.authorNickname}
+                     {parseIsoDate(detail.post.createdAt) &&
+                        ` · ${formatDotDate(parseIsoDate(detail.post.createdAt)!)}`}
+                  </p>
+
+                  {/* 내용은 글자 그대로만 보여 준다. (줄바꿈은 유지하고, 긴 글은 줄바꿈한다. HTML로 해석하지 않는다.) */}
+                  <p className="mt-5 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-black/80">
+                     {detail.post.content}
+                  </p>
+
+                  {detail.post.tags.length > 0 && (
+                     <ul className="mt-6 flex flex-wrap gap-2">
+                        {detail.post.tags.map((tag) => (
+                           <li key={tag}>
+                              <Link
+                                 href={`/community?q=${encodeURIComponent(`#${tag}`)}`}
+                                 className="inline-block rounded-full bg-brand-orange-light px-4 py-2 text-xs font-bold text-brand-brown hover:bg-brand-line/50"
+                              >
+                                 #{tag}
+                              </Link>
+                           </li>
+                        ))}
+                     </ul>
+                  )}
+               </article>
+
+               <div className={COMMENT_OFFSET_CLASS}>
+                  <CommentCard key={detail.post.id} postId={detail.post.id} />
                </div>
-
-               <div className="mt-6 flex items-start justify-between gap-4">
-                  <h1 className="text-2xl font-bold wrap-break-word text-black">
-                     {detail.post.title}
-                  </h1>
-                  {detail.post.canDelete && <PostDeleteButton postId={detail.post.id} />}
-               </div>
-               <p className="mt-2 text-xs text-black/50">
-                  {detail.post.authorNickname}
-                  {parseIsoDate(detail.post.createdAt) &&
-                     ` · ${formatDotDate(parseIsoDate(detail.post.createdAt)!)}`}
-               </p>
-
-               {/* 내용은 글자 그대로만 보여 준다. (줄바꿈은 유지하고, 긴 글은 줄바꿈한다. HTML로 해석하지 않는다.) */}
-               <p className="mt-5 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-black/80">
-                  {detail.post.content}
-               </p>
-
-               {detail.post.tags.length > 0 && (
-                  <ul className="mt-6 flex flex-wrap gap-2">
-                     {detail.post.tags.map((tag) => (
-                        <li key={tag}>
-                           <Link
-                              href={`/community?q=${encodeURIComponent(`#${tag}`)}`}
-                              className="inline-block rounded-full bg-brand-orange-light px-4 py-2 text-xs font-bold text-brand-brown hover:bg-brand-line/50"
-                           >
-                              #{tag}
-                           </Link>
-                        </li>
-                     ))}
-                  </ul>
-               )}
-            </article>
+            </div>
          )}
       </section>
    );
