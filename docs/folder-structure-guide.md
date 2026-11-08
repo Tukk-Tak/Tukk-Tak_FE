@@ -25,8 +25,8 @@ src/
 
 | 레이어 | 담는 것 | 예시 |
 |---|---|---|
-| `app/` | Next.js 라우팅 파일(`page.tsx`, `layout.tsx`, `loading.tsx`). **로직을 직접 작성하지 않고 features/widgets를 불러와 배치만 함** | `app/editor/[siteId]/page.tsx` |
-| `widgets/` | 여러 feature를 묶어 독립적으로 존재하는 UI 블록. 라우트 여러 개에서 재사용될 수 있음 | `widgets/header`, `widgets/site-renderer`, `widgets/editor-sidebar` |
+| `app/` | Next.js 라우팅 파일(`page.tsx`, `layout.tsx`, `loading.tsx`). **로직을 직접 작성하지 않고 features/widgets를 불러와 배치만 함** | `app/(editor)/editor/[siteId]/page.tsx` |
+| `widgets/` | 여러 feature를 묶어 독립적으로 존재하는 UI 블록. 라우트 여러 개에서 재사용될 수 있음 | `widgets/header`, `widgets/site-renderer`, `widgets/editor-layout` |
 | `features/` | 사용자 액션 하나 = 폴더 하나. 이름은 `{도메인}-{동작}` 형식 | `features/auth-signup`, `features/editor-block-toolbar`, `features/community-like` |
 | `entities/` | 데이터 타입 정의 + 그 데이터를 그리는 **기본** 컴포넌트(장식/상태 로직 없이 순수 표시만). 여러 feature/widget에서 재사용됨 | `entities/block`, `entities/site`, `entities/post`, `entities/user`, `entities/plan` |
 | `shared/` | 어떤 도메인에도 속하지 않는 것. 디자인 시스템(ui), API 클라이언트/훅(lib), 컬러·폰트 토큰(config) | `shared/ui/Button`, `shared/lib/apiClient`, `shared/config/tokens` |
@@ -56,7 +56,7 @@ app → widgets → features → entities → shared
 2. **사용자가 취하는 하나의 "행동"과 그에 딸린 UI/상태인가?** → `features/`
    - 예: 블록의 색상/테두리를 바꾸는 툴바, 댓글을 작성하는 폼 → `features/editor-block-toolbar`, `features/community-comment`
 3. **여러 feature/entity를 조합한, 그 자체로 완결된 화면 영역인가?** → `widgets/`
-   - 예: 헤더 전체, "에디터 캔버스 + 사이드바"를 합친 에디터 화면 전체 → `widgets/editor-sidebar`
+   - 예: 헤더 전체, "상단 바 + 캔버스 + 오른쪽 패널"을 합친 에디터 화면 전체 → `widgets/editor-layout`
 4. **도메인과 무관하게 어디서든 쓰이는 범용 요소인가?** → `shared/`
    - 예: 공통 버튼, 모달, API 요청 함수, 날짜 포맷 유틸
 
@@ -78,7 +78,7 @@ app → widgets → features → entities → shared
 아래 5개가 핵심 entity입니다. 새 entity를 임의로 만들기 전에 이 목록에 포함시킬 수 있는지 먼저 확인하세요.
 
 - `entities/user` — 회원 정보, 사업자 인증 상태
-- `entities/block` — 블록 타입 정의(헤더/히어로/메뉴판/갤러리/푸터 등) + 각 블록의 기본 렌더링 컴포넌트
+- `entities/block` — 블록 타입 정의(헤더/히어로/줄글/목록/갤러리/푸터 6종, 메뉴판은 목록에 통합) + 각 블록의 기본 렌더링 컴포넌트
 - `entities/site` — 사이트(사장님이 만든 가게 페이지) 데이터 구조, draft/배포 상태
 - `entities/post` — 커뮤니티 게시물/댓글 타입
 - `entities/plan` — 구독 플랜 정책(FREE/BASIC/PREMIUM 제한값). `PlanPolicyGuard` 같은 공통 정책 체크 로직이 여기 속함
@@ -86,36 +86,42 @@ app → widgets → features → entities → shared
 ## 5. 예시: 에디터 페이지가 조립되는 방식
 
 ```tsx
-// app/editor/[siteId]/page.tsx
+// app/(editor)/editor/[siteId]/page.tsx
 // ⚠️ 이 파일에는 상태 관리나 API 호출 로직을 직접 작성하지 않습니다. 조립만 합니다.
 
-import { EditorTopbar } from "@/features/editor-toolbar";
-import { EditorSidebar } from "@/widgets/editor-sidebar";
+import { getSite, getSiteTitle } from "@/entities/site";
+import { EditorLayout } from "@/widgets/editor-layout";
 import { SiteRenderer } from "@/widgets/site-renderer";
 
-export default function EditorPage({ params }: { params: { siteId: string } }) {
+// Next 15부터 params는 Promise라서 async 페이지로 만들고 await로 받습니다.
+export default async function EditorPage({ params }: { params: Promise<{ siteId: string }> }) {
+  const { siteId } = await params;
+  const site = await getSite(siteId); // 목업 단계에서는 entities/site/api의 목업 함수
+
   return (
-    <div>
-      <EditorTopbar siteId={params.siteId} />
-      <SiteRenderer siteId={params.siteId} editable />
-      <EditorSidebar siteId={params.siteId} />
-    </div>
+    <EditorLayout siteName={getSiteTitle(site)}>
+      <SiteRenderer site={site} />
+    </EditorLayout>
   );
 }
 ```
 
+`EditorLayout`(widget)이 상단 바(feature), 캔버스 틀, 오른쪽 패널을 조립하고, 캔버스 안에 들어갈 `SiteRenderer`는 페이지가 `children`으로 넘깁니다. **widget끼리는 서로 import할 수 없어서**(같은 레이어 규칙) `editor-layout`이 `site-renderer`를 직접 가져오지 못하기 때문입니다. 이렇게 조립하는 것이 app 레이어의 역할입니다.
+
 ```tsx
-// app/site/[slug]/page.tsx
-// 배포된 실제 가게 페이지. SiteRenderer를 editable=false로 재사용 — 렌더링 로직 중복 없음.
+// app/(site)/site/[slug]/page.tsx   ← 서비스 헤더가 없는 별도 라우트 그룹
+// 배포된 실제 가게 페이지. SiteRenderer를 편집 기능 없이 재사용 — 렌더링 로직 중복 없음.
 
 import { SiteRenderer } from "@/widgets/site-renderer";
 
-export default function PublicSitePage({ params }: { params: { slug: string } }) {
-  return <SiteRenderer slug={params.slug} editable={false} />;
+export default async function PublicSitePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const site = await getPublishedSite(slug); // slug로 불러온 배포본 데이터
+  return <SiteRenderer site={site} />;
 }
 ```
 
-`widgets/site-renderer`는 내부적으로 `entities/block`의 렌더링 컴포넌트들을 순회하며 그립니다. `editable` 여부에 따라 `features/editor-block-toolbar` 같은 편집 기능을 얹을지만 결정합니다. 이렇게 하면 에디터 미리보기와 실제 배포 화면이 다르게 보이는 버그를 구조적으로 방지할 수 있습니다.
+`widgets/site-renderer`는 내부적으로 `entities/block`의 렌더링 컴포넌트들을 순회하며 그립니다. 편집 모드(`editable`)에서만 `features/editor-*`의 편집 기능(블록 이름 표시, 선택 테두리 등)을 얹습니다. 이렇게 하면 에디터 미리보기와 실제 배포 화면이 다르게 보이는 버그를 구조적으로 방지할 수 있습니다. 편집 상태(선택 여부 등)는 `entities/block`에 두지 않습니다.
 
 ## 6. 라우트 그룹 (선택)
 

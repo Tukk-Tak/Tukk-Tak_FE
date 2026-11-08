@@ -19,6 +19,7 @@
    --color-brand-brown: #5c3d2e; /* 갈색 */
    --color-brand-cream: #fffaf5; /* 메인 페이지 배경 */
    --color-brand-line: #ead8c2; /* 베이지 테두리, 구분선, 장식 점 */
+   --color-brand-grid: #e4d6c4; /* 에디터 캔버스 격자선 */
 
    /* ── 상태 색 ── */
    --color-state-success: #2e7d32; /* 성공, 확인 메시지 */
