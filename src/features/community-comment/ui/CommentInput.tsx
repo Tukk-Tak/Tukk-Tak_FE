@@ -76,7 +76,8 @@ export function CommentInput({ postId, onCreated }: CommentInputProps) {
             maxLength={COMMENT_MAX_LENGTH}
             placeholder="댓글을 남겨보세요"
             value={content}
-            disabled={submitting}
+            // disabled로 막으면 포커스를 잃어 실패 뒤 바로 재시도할 수 없어서, 읽기 전용으로 막는다.
+            readOnly={submitting}
             onChange={(event) => {
                setContent(event.target.value);
                clearError();

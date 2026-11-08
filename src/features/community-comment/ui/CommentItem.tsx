@@ -18,7 +18,9 @@ export function CommentItem({ comment }: { comment: CommentView }) {
 
    const composerOpen = ui.composer?.rootId === comment.id;
    const showThread =
-      comment.status !== 'private_hidden' && (comment.replyCount > 0 || composerOpen);
+      comment.status !== 'private_hidden' &&
+      // 댓글 개수 갱신이 늦어도, 방금 불러온 답글이 있으면 스레드를 계속 보여 준다.
+      (comment.replyCount > 0 || composerOpen || replies.items.length > 0);
 
    // 답글 버튼을 누르면 이 스레드를 펼치고 맨 끝에 입력창을 연다. (다른 스레드에서 열려 있던 입력창은 닫힌다.)
    const handleReply = (target: ComposerTarget) => {
@@ -26,12 +28,13 @@ export function CommentItem({ comment }: { comment: CommentView }) {
       replies.expand();
    };
 
-   // 답글을 등록하면 스레드를 끝까지 불러와 새 답글이 맨 끝에 보이게 하고, 잠깐 강조한 뒤 댓글 개수를 갱신한다.
+   // 답글을 등록하면 댓글 개수 갱신과 스레드 불러오기를 함께 시작하고, 새 답글이 맨 끝에 보인 뒤에 입력창을 닫고 강조한다.
+   // (첫 답글이면 입력창이 닫히는 순간 스레드가 사라지지 않도록, 닫는 일을 불러오기 뒤로 미룬다.)
    const handleSubmitted = async (reply: CommentView) => {
-      ui.closeComposer();
-      await replies.loadAll();
-      ui.highlight(reply.id);
       ui.refresh();
+      await replies.loadAll();
+      ui.closeComposer();
+      ui.highlight(reply.id);
    };
 
    const handleReplyDeleted = (commentId: string) => {

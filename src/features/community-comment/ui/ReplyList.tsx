@@ -96,7 +96,7 @@ export function ReplyList({
                {replies.hasNext && replies.status !== 'error' && (
                   <button
                      type="button"
-                     disabled={replies.status === 'loading-more'}
+                     disabled={replies.status === 'loading-more' || replies.status === 'loading'}
                      onClick={replies.loadMore}
                      className="flex w-full cursor-pointer items-center justify-center gap-1 py-2 text-sm font-semibold text-brand-orange hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                   >

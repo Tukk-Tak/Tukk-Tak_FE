@@ -14,7 +14,8 @@ interface ReplyComposerProps {
    target: ComposerTarget;
    // 스레드의 최상위 댓글이 비공개인지. 비공개 댓글의 답글은 비공개로만 등록된다.
    rootPrivate: boolean;
-   onSubmitted: (reply: CommentView) => void;
+   // 등록 뒤 화면을 갱신하는 일(답글 불러오기 등). 끝날 때까지 입력창은 "등록 중"으로 남는다.
+   onSubmitted: (reply: CommentView) => Promise<void>;
    onCancel: () => void;
 }
 
@@ -36,20 +37,23 @@ export function ReplyComposer({ target, rootPrivate, onSubmitted, onCancel }: Re
 
    const handleSubmit = async () => {
       if (!canSubmit) return;
-      const created = await submit(() =>
-         createReply(target.rootId, {
+      // 등록 뒤 갱신까지 한 번에 맡겨서, 새 답글이 보이기 전에 입력창이 비거나 다시 눌리지 않게 한다.
+      await submit(async () => {
+         const created = await createReply(target.rootId, {
             content: content.trim(),
             isPrivate,
             mentionNickname: mention ?? undefined,
-         }),
-      );
-      if (created) onSubmitted(created);
+         });
+         await onSubmitted(created);
+         return created;
+      });
    };
 
    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
       // keyCode 229는 일부 브라우저(Safari)에서 한글 조합 중임을 알려 주는 값이다.
       const composing = event.nativeEvent.isComposing || event.keyCode === 229;
-      if (composing) return;
+      // 등록 중에는 읽기 전용이라 입력은 막히지만, 키 동작(Esc 닫기 등)은 오므로 따로 막는다.
+      if (composing || submitting) return;
 
       if (event.key === 'Enter' && !event.shiftKey) {
          event.preventDefault();
@@ -76,7 +80,8 @@ export function ReplyComposer({ target, rootPrivate, onSubmitted, onCancel }: Re
                maxLength={COMMENT_MAX_LENGTH}
                placeholder="답글을 남겨보세요"
                value={content}
-               disabled={submitting}
+               // disabled로 막으면 포커스를 잃어 실패 뒤 바로 재시도할 수 없어서, 읽기 전용으로 막는다.
+               readOnly={submitting}
                onChange={(event) => {
                   setContent(event.target.value);
                   clearError();

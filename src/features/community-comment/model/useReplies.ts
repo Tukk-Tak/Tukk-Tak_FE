@@ -35,8 +35,11 @@ export function useReplies(rootId: string) {
    const [state, setState] = useState<RepliesState>(INITIAL);
    // 요청마다 올라가는 번호. 오래된 요청의 응답이 늦게 도착해도 무시한다.
    const requestRef = useRef(0);
+   // 마지막으로 시작한 불러오기 종류. 실패했을 때 같은 동작을 다시 하려고 기억해 둔다.
+   const lastActionRef = useRef<'first' | 'more' | 'all'>('first');
 
    const loadFirst = useCallback(async () => {
+      lastActionRef.current = 'first';
       const request = ++requestRef.current;
       setState((prev) => ({ ...prev, status: 'loading', message: null }));
       try {
@@ -57,7 +60,9 @@ export function useReplies(rootId: string) {
    }, [rootId]);
 
    const loadMore = useCallback(async () => {
-      if (!state.hasNext || state.status === 'loading-more') return;
+      // 다른 불러오기(처음·전체)가 진행 중일 때 시작하면 그 결과가 버려지므로 막는다.
+      if (!state.hasNext || state.status === 'loading-more' || state.status === 'loading') return;
+      lastActionRef.current = 'more';
       const request = ++requestRef.current;
       setState((prev) => ({ ...prev, status: 'loading-more', message: null }));
       try {
@@ -78,6 +83,7 @@ export function useReplies(rootId: string) {
 
    // 처음부터 끝까지 모두 불러온다. 스레드가 짧아서(답글 수십 개 이내) 반복 요청으로 충분하다.
    const loadAll = useCallback(async () => {
+      lastActionRef.current = 'all';
       const request = ++requestRef.current;
       setState((prev) => ({ ...prev, expanded: true, status: 'loading', message: null }));
       try {
@@ -112,10 +118,13 @@ export function useReplies(rootId: string) {
 
    const collapse = useCallback(() => setState((prev) => ({ ...prev, expanded: false })), []);
 
+   // 실패한 동작을 그대로 다시 한다. (전체 불러오기가 실패했는데 "더 보기"를 하면 아무 일도 안 될 수 있다.)
    const retry = useCallback(() => {
-      if (state.loaded) void loadMore();
+      const action = lastActionRef.current;
+      if (action === 'all') void loadAll();
+      else if (action === 'more') void loadMore();
       else void loadFirst();
-   }, [loadFirst, loadMore, state.loaded]);
+   }, [loadAll, loadFirst, loadMore]);
 
    // 삭제한 답글을 목록에서 "삭제된 댓글입니다." 상태로 바꾼다. (서버 응답을 다시 받지 않고 화면에서만 바꾼다.)
    const markDeleted = useCallback((id: string) => {
