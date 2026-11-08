@@ -1,6 +1,7 @@
 import { ApiError } from '@/shared/lib/apiClient';
 import { mockDelay } from '@/shared/lib/mockDelay';
 import { POST_ERROR, type GetPostsParams, type PostPage, type PostSummary } from '../types';
+import { isMockDeleted, isMockLiked } from './mockPostState';
 import { MOCK_POSTS } from './mockPosts';
 
 // 검색어 비교용으로 정규화한다. (한글 조합 방식 통일 + 대소문자 무시)
@@ -37,7 +38,10 @@ export async function getPosts(params: GetPostsParams): Promise<PostPage> {
       );
    }
 
-   const all = params.mock === 'empty' ? [] : MOCK_POSTS;
+   // 삭제한 글은 빼고, 좋아요를 누른 글은 개수에 반영한다. (실제로는 서버가 이미 반영해서 내려준다.)
+   const all = (params.mock === 'empty' ? [] : MOCK_POSTS)
+      .filter((post) => !isMockDeleted(post.id))
+      .map((post) => (isMockLiked(post.id) ? { ...post, likeCount: post.likeCount + 1 } : post));
    const found = all.filter((post) => matches(post, params));
 
    found.sort((a, b) => {
