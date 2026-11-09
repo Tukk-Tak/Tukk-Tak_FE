@@ -5,12 +5,12 @@ export const MOCK_SESSION_KEY = 'ttukttak:mock-session';
 // TODO: 백엔드가 쿠키 세션을 내려주면 이 파일은 삭제한다. 지금은 로그인 결과를 브라우저 저장소에 흉내 내서 보관한다.
 // 로그인 상태 유지를 체크하면 localStorage(브라우저를 닫아도 유지), 해제하면 sessionStorage(탭을 닫으면 로그아웃)에 둔다.
 
-function isUser(value: unknown): value is User {
-   return (
-      typeof value === 'object' &&
-      value !== null &&
-      typeof (value as { nickname?: unknown }).nickname === 'string'
-   );
+// 저장된 값에서 User를 꺼낸다. 인증 필드가 없던 예전 세션은 "미인증"으로 본다.
+function parseUser(value: unknown): User | null {
+   if (typeof value !== 'object' || value === null) return null;
+   const { nickname, isBusinessVerified } = value as Record<string, unknown>;
+   if (typeof nickname !== 'string') return null;
+   return { nickname, isBusinessVerified: isBusinessVerified === true };
 }
 
 // 쿠키를 막은 브라우저나 제한된 iframe에서는 저장소 속성을 읽는 것만으로 예외가 난다.
@@ -40,8 +40,8 @@ export function readMockSession(): User | null {
       try {
          const raw = storage.getItem(MOCK_SESSION_KEY);
          if (!raw) continue;
-         const parsed: unknown = JSON.parse(raw);
-         if (isUser(parsed)) return parsed;
+         const user = parseUser(JSON.parse(raw));
+         if (user) return user;
       } catch {
          // 저장소에 접근할 수 없거나 값이 깨졌으면 로그인하지 않은 것으로 본다.
       }
