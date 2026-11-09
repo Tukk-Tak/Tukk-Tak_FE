@@ -2,6 +2,7 @@ import type { Section } from '../types';
 import { BlockPlaceholder } from './BlockPlaceholder';
 import { FooterBlock } from './footer/FooterBlock';
 import { HeaderBlock } from './header/HeaderBlock';
+import { HeroBlock } from './hero/HeroBlock';
 import { ListBlock } from './list/ListBlock';
 import { TextBlock } from './text/TextBlock';
 
@@ -10,6 +11,8 @@ export function BlockRenderer({ section }: { section: Section }) {
    switch (section.type) {
       case 'header':
          return <HeaderBlock section={section} />;
+      case 'hero':
+         return <HeroBlock section={section} />;
       case 'text':
          return <TextBlock section={section} />;
       case 'list':
