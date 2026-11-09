@@ -22,6 +22,17 @@ const MENU_ITEMS: ListItem[] = [
    { id: 'i7', name: '콜드브루', price: '4,800원' },
    { id: 'i8', name: '크루아상', price: '3,800원' },
 ];
+// 전면 이미지형에서 사진이 떴을 때(어두운 막 + 흰 글자)의 모습을 보기 위한 샘플 사진. (색 그라데이션)
+// 다른 줄은 MOCK_IMAGE_URL(빈 값)을 써서 대체 화면을 보여 주고, 이 줄만 사진을 쓴다.
+const HERO_PHOTO = {
+   url: `data:image/svg+xml,${encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">' +
+         '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+         '<stop offset="0" stop-color="#f6d365"/><stop offset="1" stop-color="#fda085"/>' +
+         '</linearGradient></defs><rect width="1200" height="600" fill="url(#g)"/></svg>',
+   )}`,
+};
+const HERO_BADGES = ['신메뉴 출시', '주차 가능', '반려동물 동반'];
 const BODY =
    '2019년 문을 연 이후 매일 아침 원두를 직접 볶고 있어요.\n좋은 재료가 좋은 맛을 만든다는 마음으로 준비합니다.';
 
@@ -65,6 +76,55 @@ const FULL_WIDTH_ROWS: Row[] = [
             type: 'header',
             variant: 'centered',
             content: { brandName: '중앙형 (header / centered)' },
+         },
+      ],
+   },
+
+   // 히어로 (세 variant 모두 전체 폭 전용이라 반폭 줄은 없다)
+   {
+      id: 'full-hero-full-image',
+      sections: [
+         {
+            id: 'full-hero-full-image-1',
+            type: 'hero',
+            variant: 'fullImage',
+            content: {
+               title: '전면 이미지형 (hero / fullImage)',
+               subtitle: '사진을 배경으로 깔고 가운데에 글을 올립니다.',
+               image: HERO_PHOTO,
+               badges: HERO_BADGES,
+            },
+         },
+      ],
+   },
+   {
+      id: 'full-hero-split',
+      sections: [
+         {
+            id: 'full-hero-split-1',
+            type: 'hero',
+            variant: 'split',
+            content: {
+               title: '좌우 분할형 (hero / split)',
+               subtitle: '글과 이미지를 나란히 놓습니다.',
+               image: IMAGE,
+               badges: HERO_BADGES,
+            },
+         },
+      ],
+   },
+   {
+      id: 'full-hero-text-only',
+      sections: [
+         {
+            id: 'full-hero-text-only-1',
+            type: 'hero',
+            variant: 'textOnly',
+            content: {
+               title: '텍스트형 (hero / textOnly)',
+               subtitle: '이미지 없이 큰 문구로 시작합니다.',
+               badges: HERO_BADGES,
+            },
          },
       ],
    },
