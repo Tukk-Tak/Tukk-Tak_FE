@@ -1,6 +1,6 @@
-import { Bell } from 'lucide-react';
 import type { User } from '@/entities/user/types';
 import { Button } from '@/shared/ui/Button';
+import { NotificationMenu } from './NotificationMenu';
 import { ProfileMenu } from './ProfileMenu';
 
 export function MemberActions({ user }: { user: User }) {
@@ -10,14 +10,7 @@ export function MemberActions({ user }: { user: User }) {
          <div className="hidden md:block">
             <Button>사이트 만들기</Button>
          </div>
-         <button
-            type="button"
-            aria-label="알림"
-            className="relative flex size-9 cursor-pointer items-center justify-center rounded-full border border-black/10 bg-white"
-         >
-            <Bell className="size-4.5 text-black/70" />
-            <span className="absolute top-1.5 right-2.5 size-1.5 rounded-full bg-red-500" />
-         </button>
+         <NotificationMenu />
          <ProfileMenu user={user} />
       </div>
    );

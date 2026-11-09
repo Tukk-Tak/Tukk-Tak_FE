@@ -11,5 +11,5 @@ import { mockDelay } from '@/shared/lib/mockDelay';
 export async function completeGoogleLogin(): Promise<User> {
    await mockDelay(600);
 
-   return { nickname: '맛있는분식' };
+   return { nickname: '맛있는분식', isBusinessVerified: true };
 }
