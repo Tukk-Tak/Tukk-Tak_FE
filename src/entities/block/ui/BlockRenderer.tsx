@@ -1,6 +1,7 @@
 import type { Section } from '../types';
 import { BlockPlaceholder } from './BlockPlaceholder';
 import { FooterBlock } from './footer/FooterBlock';
+import { GalleryBlock } from './gallery/GalleryBlock';
 import { HeaderBlock } from './header/HeaderBlock';
 import { HeroBlock } from './hero/HeroBlock';
 import { ListBlock } from './list/ListBlock';
@@ -15,6 +16,8 @@ export function BlockRenderer({ section }: { section: Section }) {
          return <HeroBlock section={section} />;
       case 'text':
          return <TextBlock section={section} />;
+      case 'gallery':
+         return <GalleryBlock section={section} />;
       case 'list':
          return <ListBlock section={section} />;
       case 'footer':

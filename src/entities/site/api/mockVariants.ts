@@ -33,6 +33,8 @@ const HERO_PHOTO = {
    )}`,
 };
 const HERO_BADGES = ['신메뉴 출시', '주차 가능', '반려동물 동반'];
+// 갤러리 샘플 사진 목록. variant마다 앞에서부터 필요한 개수만큼 잘라 쓴다. (그리드 8, 대표+썸네일 5, 단일 액자 2)
+const GALLERY_IMAGES = Array.from({ length: 8 }, () => IMAGE);
 const BODY =
    '2019년 문을 연 이후 매일 아침 원두를 직접 볶고 있어요.\n좋은 재료가 좋은 맛을 만든다는 마음으로 준비합니다.';
 
@@ -199,6 +201,41 @@ const FULL_WIDTH_ROWS: Row[] = [
       ],
    },
 
+   // 갤러리 (사진만 있어 제목이 없으므로, 어떤 줄인지는 아래 순서로 알아본다: 그리드 8장, 대표+썸네일 5장, 단일 액자 2장)
+   {
+      id: 'full-gallery-grid',
+      sections: [
+         {
+            id: 'full-gallery-grid-1',
+            type: 'gallery',
+            variant: 'grid',
+            content: { images: GALLERY_IMAGES.slice(0, 8) },
+         },
+      ],
+   },
+   {
+      id: 'full-gallery-featured',
+      sections: [
+         {
+            id: 'full-gallery-featured-1',
+            type: 'gallery',
+            variant: 'featured',
+            content: { images: GALLERY_IMAGES.slice(0, 5) },
+         },
+      ],
+   },
+   {
+      id: 'full-gallery-single',
+      sections: [
+         {
+            id: 'full-gallery-single-1',
+            type: 'gallery',
+            variant: 'single',
+            content: { images: GALLERY_IMAGES.slice(0, 2) },
+         },
+      ],
+   },
+
    // 푸터 (두 variant 모두 전체 폭 전용이라 반폭 줄은 없다)
    {
       id: 'full-footer-simple',
@@ -293,6 +330,58 @@ const HALF_WIDTH_ROWS: Row[] = [
             type: 'list',
             variant: 'compact',
             content: { title: '컴팩트 타일형 · 반폭', items: MENU_ITEMS },
+         },
+      ],
+   },
+   // 갤러리: 세 variant 모두 반폭 가능
+   {
+      id: 'half-gallery-grid',
+      sections: [
+         {
+            id: 'half-gallery-grid-1',
+            type: 'gallery',
+            variant: 'grid',
+            content: { images: GALLERY_IMAGES.slice(0, 8) },
+         },
+         {
+            id: 'half-gallery-grid-2',
+            type: 'gallery',
+            variant: 'grid',
+            content: { images: GALLERY_IMAGES.slice(0, 8) },
+         },
+      ],
+   },
+   {
+      id: 'half-gallery-featured',
+      sections: [
+         {
+            id: 'half-gallery-featured-1',
+            type: 'gallery',
+            variant: 'featured',
+            content: { images: GALLERY_IMAGES.slice(0, 5) },
+         },
+         {
+            id: 'half-gallery-featured-2',
+            type: 'gallery',
+            variant: 'featured',
+            content: { images: GALLERY_IMAGES.slice(0, 5) },
+         },
+      ],
+   },
+   {
+      id: 'half-gallery-single',
+      sections: [
+         {
+            id: 'half-gallery-single-1',
+            type: 'gallery',
+            variant: 'single',
+            content: { images: GALLERY_IMAGES.slice(0, 2) },
+         },
+         {
+            id: 'half-gallery-single-2',
+            type: 'gallery',
+            variant: 'single',
+            content: { images: GALLERY_IMAGES.slice(0, 2) },
          },
       ],
    },
