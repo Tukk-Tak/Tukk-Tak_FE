@@ -3,6 +3,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { ScrollArea } from './ScrollArea';
 
 interface ModalProps {
    // 화면에 보이는 제목 요소(children 안)의 id. 스크린 리더가 모달 이름으로 읽는다.
@@ -85,32 +86,41 @@ export function Modal({
    }, []);
 
    return createPortal(
-      <div
-         className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4"
-         onMouseDown={(event) => {
-            if (closeOnBackdrop && event.target === event.currentTarget) closeRef.current();
-         }}
-      >
-         <div
-            ref={dialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            tabIndex={-1}
-            className={`relative my-auto w-full rounded-2xl bg-white shadow-card outline-none ${className}`}
+      <div className="fixed inset-0 z-50 bg-black/40">
+         {/* 모달이 화면보다 길면 이 안에서 스크롤된다. 포커스는 아래에서 직접 가두므로 스크롤 영역은 Tab으로 멈추지 않게 한다. */}
+         <ScrollArea
+            className="size-full"
+            contentClassName="flex min-h-full flex-col"
+            focusable={false}
          >
-            {showCloseButton && (
-               <button
-                  type="button"
-                  aria-label="닫기"
-                  onClick={() => closeRef.current()}
-                  className="absolute top-5 right-5 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full text-black/60 hover:bg-black/5 hover:text-black"
+            <div
+               className="flex flex-1 items-center justify-center p-4"
+               onMouseDown={(event) => {
+                  if (closeOnBackdrop && event.target === event.currentTarget) closeRef.current();
+               }}
+            >
+               <div
+                  ref={dialogRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby={titleId}
+                  tabIndex={-1}
+                  className={`relative my-auto w-full rounded-2xl bg-white shadow-card outline-none ${className}`}
                >
-                  <X className="size-5" />
-               </button>
-            )}
-            {children}
-         </div>
+                  {showCloseButton && (
+                     <button
+                        type="button"
+                        aria-label="닫기"
+                        onClick={() => closeRef.current()}
+                        className="absolute top-5 right-5 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full text-black/60 hover:bg-black/5 hover:text-black"
+                     >
+                        <X className="size-5" />
+                     </button>
+                  )}
+                  {children}
+               </div>
+            </div>
+         </ScrollArea>
       </div>,
       document.body,
    );

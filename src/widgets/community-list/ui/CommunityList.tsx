@@ -13,6 +13,7 @@ import { SearchBar, SortSelect, useCommunityQuery, ViewToggle } from '@/features
 import { Button } from '@/shared/ui/Button';
 import { ButtonLink } from '@/shared/ui/ButtonLink';
 import { Pagination } from '@/shared/ui/Pagination';
+import { scrollAreaToTop } from '@/shared/ui/ScrollArea';
 import { CommunityEmpty } from './CommunityEmpty';
 import { PostListSkeleton } from './PostListSkeleton';
 import { ResultSummary } from './ResultSummary';
@@ -91,8 +92,8 @@ export function CommunityList() {
 
    const handlePageChange = (page: number) => {
       query.goToPage(page);
-      // 스크롤은 페이지가 아니라 main 안에서 일어나므로, 새 페이지의 맨 위부터 보이게 main을 올린다.
-      rootRef.current?.closest('main')?.scrollTo({ top: 0 });
+      // 스크롤은 페이지가 아니라 main 안의 스크롤 영역에서 일어나므로, 새 페이지의 맨 위부터 보이게 그 영역을 올린다.
+      scrollAreaToTop(rootRef.current);
    };
 
    return (

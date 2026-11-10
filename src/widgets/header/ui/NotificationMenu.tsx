@@ -7,6 +7,7 @@ import { useDismissibleMenu } from '@/shared/lib/useDismissibleMenu';
 import { useSingleFlight } from '@/shared/lib/useSingleFlight';
 import { Button } from '@/shared/ui/Button';
 import { ConfirmModal } from '@/shared/ui/ConfirmModal';
+import { ScrollArea } from '@/shared/ui/ScrollArea';
 import { useToast } from '@/shared/ui/toastContext';
 import { NotificationRow } from './NotificationRow';
 
@@ -124,16 +125,22 @@ export function NotificationMenu() {
 
                {status === 'ready' && items.length > 0 && (
                   // 알림이 많으면 이 안에서만 스크롤한다. (화면 높이에서 헤더와 여백을 뺀 만큼까지)
-                  <ul className="max-h-[min(26rem,calc(100dvh-var(--header-height)-6rem))] overflow-y-auto">
-                     {items.map((notification) => (
-                        <NotificationRow
-                           key={notification.id}
-                           notification={notification}
-                           onRemove={handleRemove}
-                           onNavigate={close}
-                        />
-                     ))}
-                  </ul>
+                  // 높이를 내용에 맞추다가 최대 높이에서 멈추므로, 최대 높이는 스크롤되는 요소(viewport)에 준다.
+                  <ScrollArea
+                     label="알림 목록"
+                     viewportClassName="max-h-[min(26rem,calc(100dvh-var(--header-height)-6rem))]"
+                  >
+                     <ul>
+                        {items.map((notification) => (
+                           <NotificationRow
+                              key={notification.id}
+                              notification={notification}
+                              onRemove={handleRemove}
+                              onNavigate={close}
+                           />
+                        ))}
+                     </ul>
+                  </ScrollArea>
                )}
             </div>
          )}
