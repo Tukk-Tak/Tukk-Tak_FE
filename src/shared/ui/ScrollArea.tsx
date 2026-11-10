@@ -49,6 +49,8 @@ export function ScrollArea({
          <ScrollAreaPrimitive.Viewport
             ref={viewportRef}
             disableImplicitContentElement
+            // scrollAreaToTop 이 가장 가까운 스크롤 요소를 찾는 표시. (Radix 내부 속성에 기대지 않으려고 따로 둔다.)
+            data-scroll-viewport=""
             // 키보드 사용자가 방향키로 스크롤할 수 있도록 포커스를 받게 한다. (포커스 표시는 키보드로 왔을 때만 보인다.)
             tabIndex={focusable ? 0 : undefined}
             role={label ? 'region' : undefined}
@@ -70,6 +72,13 @@ export function ScrollArea({
          {vertical && horizontal && <ScrollAreaPrimitive.Corner />}
       </ScrollAreaPrimitive.Root>
    );
+}
+
+// from 요소를 감싼 가장 가까운 ScrollArea를 맨 위로 올린다. (페이지 이동이나 단계 전환 뒤에 새 내용의 처음부터 보이게 한다.)
+// 페이지(main)는 서버 컴포넌트라 viewportRef를 안쪽으로 내려줄 수 없어서, 안쪽 컴포넌트가 자기 위치에서 찾아 올린다.
+// 스크롤 영역 밖이면 아무 일도 하지 않는다.
+export function scrollAreaToTop(from: Element | null | undefined) {
+   from?.closest<HTMLElement>('[data-scroll-viewport]')?.scrollTo({ top: 0 });
 }
 
 function Bar({ orientation }: { orientation: 'vertical' | 'horizontal' }) {

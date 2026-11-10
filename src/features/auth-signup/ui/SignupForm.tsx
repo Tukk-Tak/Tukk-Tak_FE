@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useGuestOnly } from '@/entities/user/model/useGuestOnly';
+import { scrollAreaToTop } from '@/shared/ui/ScrollArea';
 import type { GoogleAuthError } from '../model/googleAuthError';
 import { useEmailVerification } from '../model/useEmailVerification';
 import type { AccountValues } from '../types';
@@ -28,9 +29,9 @@ export function SignupForm({ googleError }: { googleError?: GoogleAuthError }) {
 
    const goTo = (next: Step) => {
       setStep(next);
-      // 인증 화면은 페이지 전체가 아니라 가장 가까운 main이 스크롤되므로 그 스크롤도 함께 맨 위로 올린다.
+      // 인증 화면은 페이지 전체가 아니라 main 안의 스크롤 영역이 스크롤되므로 그 영역도 함께 맨 위로 올린다.
       // (아래에서 "다음"을 눌러도 다음 단계의 첫 입력란부터 보이게 한다.)
-      rootRef.current?.closest('main')?.scrollTo({ top: 0 });
+      scrollAreaToTop(rootRef.current);
       window.scrollTo({ top: 0 });
    };
 
