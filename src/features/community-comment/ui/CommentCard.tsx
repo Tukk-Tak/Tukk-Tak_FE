@@ -6,6 +6,7 @@ import type { CommentMock, CommentView } from '@/entities/post';
 import { useSession } from '@/entities/user/model/useSession';
 import { LoginRequiredModal } from '@/shared/ui/LoginRequiredModal';
 import { Pagination } from '@/shared/ui/Pagination';
+import { ScrollArea } from '@/shared/ui/ScrollArea';
 import { CommentUiContext, type CommentUi, type ComposerTarget } from '../model/commentUi';
 import { useComments } from '../model/useComments';
 import { CommentInput } from './CommentInput';
@@ -118,10 +119,12 @@ export function CommentCard({ postId }: { postId: string }) {
                </div>
             </div>
 
-            <div
-               ref={listRef}
+            {/* 큰 화면에서만 카드 높이에 맞춰 이 영역 안에서 스크롤된다. 작은 화면에서는 높이가 내용만큼 늘어난다. */}
+            <ScrollArea
+               label="댓글 목록"
+               viewportRef={listRef}
                aria-busy={comments.status === 'success' && comments.refreshing}
-               className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+               className="lg:min-h-0 lg:flex-1"
             >
                <CommentList
                   status={comments.status}
@@ -130,7 +133,7 @@ export function CommentCard({ postId }: { postId: string }) {
                   onRetry={comments.reload}
                   canWrite={loggedIn}
                />
-            </div>
+            </ScrollArea>
 
             {data && data.totalPages > 1 && (
                <div className="shrink-0 border-t border-brand-line py-3">

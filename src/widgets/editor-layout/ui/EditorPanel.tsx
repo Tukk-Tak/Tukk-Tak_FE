@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, type KeyboardEvent } from 'react';
+import { ScrollArea } from '@/shared/ui/ScrollArea';
 import type { PanelTab } from '../types';
 
 const TABS: { value: PanelTab; label: string }[] = [
@@ -68,9 +69,12 @@ export function EditorPanel({ tab, onTabChange }: EditorPanelProps) {
                id={`editor-tabpanel-${value}`}
                aria-labelledby={`editor-tab-${value}`}
                hidden={tab !== value}
-               className="min-h-0 flex-1 overflow-y-auto p-6"
+               className="min-h-0 flex-1"
             >
-               <p className="text-sm text-black/40">준비 중이에요.</p>
+               {/* 탭 본문이 길면 이 안에서만 스크롤된다. 여백(p-6)은 끝까지 스크롤했을 때 사라지지 않게 안쪽에 둔다. */}
+               <ScrollArea className="h-full" contentClassName="p-6">
+                  <p className="text-sm text-black/40">준비 중이에요.</p>
+               </ScrollArea>
             </div>
          ))}
       </aside>

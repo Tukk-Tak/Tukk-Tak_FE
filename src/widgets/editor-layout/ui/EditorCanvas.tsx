@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ScrollArea } from '@/shared/ui/ScrollArea';
 import type { DeviceKind } from '../types';
 import { CanvasInfoBar } from './CanvasInfoBar';
 import { DeviceToggle } from './DeviceToggle';
@@ -22,10 +23,13 @@ interface EditorCanvasProps {
 export function EditorCanvas({ device, onDeviceChange, siteName, children }: EditorCanvasProps) {
    return (
       <div className="relative min-w-0 flex-1 bg-brand-orange-light">
-         <div className={`absolute inset-0 overflow-y-auto ${GRID_CLASS}`}>
-            <div className="px-8 pt-16 pb-28">
-               <ScaledFrame width={DEVICE_WIDTH[device]}>{children}</ScaledFrame>
-            </div>
+         {/* 격자는 스크롤되지 않고 영역에 고정된다. (스크롤 영역은 안쪽에 둔다.) */}
+         <div className={`absolute inset-0 ${GRID_CLASS}`}>
+            <ScrollArea className="size-full">
+               <div className="px-8 pt-16 pb-28">
+                  <ScaledFrame width={DEVICE_WIDTH[device]}>{children}</ScaledFrame>
+               </div>
+            </ScrollArea>
          </div>
          <CanvasInfoBar device={device} siteName={siteName} />
          <DeviceToggle device={device} onDeviceChange={onDeviceChange} />

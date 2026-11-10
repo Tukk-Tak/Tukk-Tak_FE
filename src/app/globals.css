@@ -25,4 +25,14 @@
       padding: 0;
       margin: 0;
    }
+
+   /*
+    * ScrollArea(shared/ui)로 감쌀 수 없는 스크롤 요소(입력창 등)를 위한 기본 스크롤바.
+    * 얇고 트랙이 투명하다. 기본 스크롤바는 자리를 차지하므로, 일반 영역은 ScrollArea를 쓴다.
+    * var() 의 두 번째 값은 토큰이 만들어지지 않았을 때의 대비용이다.
+    */
+   * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-scrollbar-thumb, rgb(92 61 46 / 0.28)) transparent;
+   }
 }
