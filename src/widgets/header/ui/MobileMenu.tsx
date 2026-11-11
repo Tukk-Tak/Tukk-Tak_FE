@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { User } from '@/entities/user/types';
+import { isActivePath } from '@/shared/lib/isActivePath';
 import { Button } from '@/shared/ui/Button';
-import { isActiveNav, NAV_ITEMS } from './HeaderNav';
+import { NAV_ITEMS } from './HeaderNav';
 
 // md 미만에서만 보이는 햄버거 메뉴. 데스크톱 헤더에서 숨겨진 nav와 "사이트 만들기"를 한 패널에 모은다.
 export function MobileMenu({ user }: { user: User | null }) {
@@ -50,7 +51,7 @@ export function MobileMenu({ user }: { user: User | null }) {
                className="border-brand-line shadow-card absolute inset-x-0 top-full flex flex-col border-b bg-white px-[4%] py-4"
             >
                {NAV_ITEMS.map(({ label, href }) => {
-                  const active = isActiveNav(pathname, href);
+                  const active = isActivePath(pathname, href);
                   return (
                      <Link
                         key={href}

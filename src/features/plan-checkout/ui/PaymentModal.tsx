@@ -16,9 +16,9 @@ import { PaymentMethodField } from './PaymentMethodField';
 import { PaymentSummary } from './PaymentSummary';
 import { TermsAgreement } from './TermsAgreement';
 
-// 결제가 끝나면 이동할 곳. 지금은 결제 내역을 볼 마이페이지로 정했다.
-// TODO: 마이페이지가 만들어지면 경로를 맞춘다. (아직 없는 페이지라 이동하면 404가 난다.)
-const PAYMENT_SUCCESS_PATH = '/mypage';
+// 결제가 끝나면 이동할 곳. 마이페이지의 결제 내역이다.
+// (마이페이지 메뉴의 경로와 같아야 한다. features는 widgets를 가져올 수 없어서 여기에도 적어 둔다.)
+const PAYMENT_SUCCESS_PATH = '/mypage/payments';
 
 interface PaymentModalProps {
    tier: PaidPlanName;

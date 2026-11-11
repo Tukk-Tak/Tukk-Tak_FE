@@ -174,9 +174,9 @@ export function PlanCard({
             // 한 줄에 이어 쓰면 카드 폭에서 어색하게 끊겨서, 만료일과 링크를 두 줄로 나눈다.
             <p className="mt-5 space-y-1 text-center text-xs text-black/60">
                <span className="block">{formatDotDate(expiry)}까지 이용할 수 있어요</span>
-               {/* TODO: 마이페이지 경로가 정해지면 맞춘다. (결제 내역에서 연장한다.) */}
+               {/* 마이페이지의 결제 내역으로 간다. (연장은 거기서 한다. 경로는 마이페이지 메뉴와 같아야 한다.) */}
                <Link
-                  href="/mypage"
+                  href="/mypage/payments"
                   className="block font-bold text-brand-orange underline-offset-2 hover:underline"
                >
                   결제 내역·연장 보기
