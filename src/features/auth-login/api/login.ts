@@ -22,7 +22,7 @@ export async function login({ email, password, rememberMe }: LoginPayload): Prom
       throw new ApiError(LOGIN_ERROR.INVALID_CREDENTIALS, '이메일 또는 비밀번호가 맞지 않아요');
    }
 
-   const user: User = { nickname: '맛있는분식', isBusinessVerified: true };
+   const user: User = { nickname: '맛있는분식', name: '김뚝딱', isBusinessVerified: true };
    saveMockSession(user, rememberMe);
    return user;
 }
