@@ -39,3 +39,6 @@ pnpm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Claude Code 로컬 설정 (개인 PC 전용)
+.claude/

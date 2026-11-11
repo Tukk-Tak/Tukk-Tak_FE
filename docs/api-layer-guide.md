@@ -69,11 +69,11 @@ export async function apiFetch<T>(url: string, options?: RequestInit): Promise<T
 ```ts
 // entities/plan/api/getMyPlan.ts
 import { apiFetch } from "@/shared/lib/apiClient";
-import type { PlanTier } from "../types";
+import type { PlanName } from "@/shared/config/plans";
 
-export async function getMyPlan(): Promise<{ tier: PlanTier; isFallback: boolean }> {
+export async function getMyPlan(): Promise<{ tier: PlanName; isFallback: boolean }> {
   try {
-    const data = await apiFetch<{ tier: PlanTier }>("/api/plan/me");
+    const data = await apiFetch<{ tier: PlanName }>("/api/plan/me");
     return { tier: data.tier, isFallback: false };
   } catch {
     // Fail-safe: 조회 실패 시 가장 제한적인 플랜으로 간주 (편의가 아니라 안전을 위한 기본값)

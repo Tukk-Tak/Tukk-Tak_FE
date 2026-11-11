@@ -1,0 +1,160 @@
+# 뚝딱 프로젝트 — 폴더 구조 가이드
+
+> 이 문서는 AI 코딩 어시스턴트(Claude Code, Cursor 등)가 코드를 생성/수정할 때 반드시 따라야 하는 폴더 구조 규칙입니다. 새 파일을 만들거나 기존 코드를 리팩터링할 때 이 문서의 레이어 규칙과 예시를 기준으로 판단하세요.
+
+## 1. 기본 원칙
+
+이 프로젝트는 **Feature-Sliced Design(FSD)을 간소화한 구조**를 씁니다. 핵심 이유는 하나입니다.
+
+> 블록(Block) 컴포넌트가 **에디터**(편집 중인 화면)와 **배포된 실제 가게 사이트**(`/site/{링크명}`) 양쪽에서 똑같이 렌더링되어야 합니다. 이 재사용을 구조적으로 보장하기 위해 "도메인 모델 + 기본 렌더링"을 담당하는 `entities` 레이어를 features/widgets와 분리해서 둡니다.
+
+일반적인 순수 feature-based 구조(도메인별 폴더에 컴포넌트/훅/API를 다 몰아넣는 방식)는 쓰지 않습니다.
+
+## 2. 레이어 구조와 각 레이어의 역할
+
+```
+src/
+  app/          ← Next.js App Router. 라우팅 파일(page.tsx 등)만 존재. 로직 없음.
+  widgets/      ← 여러 feature/entity를 조립한 완성된 UI 블록
+  features/     ← 사용자의 "행동" 단위 (로그인하다, 좋아요를 누르다, 블록을 추가하다)
+  entities/     ← 도메인 "모델"과 그 모델의 기본 렌더링 (User, Block, Site, Post, Plan)
+  shared/       ← 도메인과 무관한 공통 자원 (버튼, 인풋, API 클라이언트, 유틸, 컬러 토큰)
+```
+
+### 레이어별 상세
+
+| 레이어 | 담는 것 | 예시 |
+|---|---|---|
+| `app/` | Next.js 라우팅 파일(`page.tsx`, `layout.tsx`, `loading.tsx`). **로직을 직접 작성하지 않고 features/widgets를 불러와 배치만 함** | `app/(editor)/editor/[siteId]/page.tsx` |
+| `widgets/` | 여러 feature를 묶어 독립적으로 존재하는 UI 블록. 라우트 여러 개에서 재사용될 수 있음 | `widgets/header`, `widgets/site-renderer`, `widgets/editor-layout` |
+| `features/` | 사용자 액션 하나 = 폴더 하나. 이름은 `{도메인}-{동작}` 형식 | `features/auth-signup`, `features/editor-block-toolbar`, `features/community-like` |
+| `entities/` | 데이터 타입 정의 + 그 데이터를 그리는 **기본** 컴포넌트(장식/상태 로직 없이 순수 표시만). 여러 feature/widget에서 재사용됨 | `entities/block`, `entities/site`, `entities/post`, `entities/user`, `entities/plan` |
+| `shared/` | 어떤 도메인에도 속하지 않는 것. 디자인 시스템(ui), API 클라이언트/훅(lib), 컬러·폰트 토큰(config) | `shared/ui/Button`, `shared/lib/apiClient`, `shared/config/tokens` |
+
+### import 방향 규칙 (중요)
+
+**위에서 아래로만 참조 가능합니다.** 역방향 import는 금지입니다.
+
+```
+app → widgets → features → entities → shared
+```
+
+- `entities/block`이 `features/editor-block-toolbar`를 import하면 안 됩니다. (역방향)
+- `shared/ui/Button`이 `entities`나 `features`를 import하면 안 됩니다. (shared는 항상 최하단)
+- 같은 레이어끼리(`features/a`가 `features/b`를) 직접 import하는 것도 지양합니다. 공유가 필요하면 그 로직을 `entities`나 `shared`로 내려야 합니다. 단, `entities`끼리는 도메인 모델이 서로를 참조할 수 있어 허용합니다.
+- 다른 레이어/슬라이스를 가져올 때는 반드시 `@/` 별칭을 씁니다. (`../../../features/...`처럼 상대경로로 레이어를 넘지 않습니다.)
+- 같은 슬라이스 안의 파일끼리는 상대경로를 씁니다. (`features/a` 안에서 `@/features/a/...`처럼 자기 슬라이스를 별칭으로 가져오면 린트 에러가 납니다. 단, `entities`는 `entities`끼리 허용하는 예외라 린트가 잡지 못하므로, `entities` 안에서도 같은 슬라이스는 상대경로를 쓰는 것을 컨벤션으로 지킵니다.)
+- 위 import 방향 규칙은 ESLint(`no-restricted-imports`)가 검사합니다. 예외가 꼭 필요하면 `// eslint-disable-next-line no-restricted-imports -- 사유`처럼 사유를 적습니다.
+- 린트는 경로에 레이어 이름이 들어 있는 상대경로(`../../features/...`)도 막지만, 같은 레이어의 형제 슬라이스를 `../b`처럼 가져오는 것은 막지 못합니다. 이 경우는 리뷰에서 확인합니다.
+
+## 3. 새 코드를 어디에 둘지 판단하는 순서
+
+새 컴포넌트나 로직을 작성할 때 아래 순서로 자문하세요.
+
+1. **여러 라우트/화면에서 재사용되는 "데이터 구조 + 기본 표시"인가?** → `entities/`
+   - 예: 블록 하나를 화면에 그리는 컴포넌트 자체 (에디터에서도, 배포 사이트에서도 씀) → `entities/block`
+2. **사용자가 취하는 하나의 "행동"과 그에 딸린 UI/상태인가?** → `features/`
+   - 예: 블록의 색상/테두리를 바꾸는 툴바, 댓글을 작성하는 폼 → `features/editor-block-toolbar`, `features/community-comment`
+3. **여러 feature/entity를 조합한, 그 자체로 완결된 화면 영역인가?** → `widgets/`
+   - 예: 헤더 전체, "상단 바 + 캔버스 + 오른쪽 패널"을 합친 에디터 화면 전체 → `widgets/editor-layout`
+4. **도메인과 무관하게 어디서든 쓰이는 범용 요소인가?** → `shared/`
+   - 예: 공통 버튼, 모달, API 요청 함수, 날짜 포맷 유틸
+
+**헷갈리면 entities를 우선 고려하세요.** "이게 두 군데 이상에서 재사용될 가능성이 있는 도메인 데이터인가?"를 항상 먼저 물어보고, 아니라면 features로 내려가는 순서가 안전합니다.
+
+> ⚠️ **판단이 명확하지 않다면 임의로 결정하지 말고 먼저 확인받으세요.**
+> 위 절차를 따라도 위치가 애매한 경우(예: 하나의 값/로직이 `shared`와 `entities` 양쪽에 걸쳐 보이는 경우 등)에는, 그 자리에서 폴더를 만들거나 구조를 확정하지 말고 다음 중 하나로 진행하세요.
+> - 사용자에게 직접 확인을 요청한다.
+> - 판단이 애매한 이유를 설명하고, 추천하는 위치(가능하면 대안도 함께)를 제안한 뒤 사용자의 승인을 받고 나서 파일을 생성한다.
+>
+> 특히 아래 항목들은 아직 팀 논의로 확정되지 않은 상태이므로, 이 항목과 관련된 코드를 새로 만들 때는 반드시 이 원칙을 적용하세요.
+> - 테마 프리셋 값 및 대비 검증 로직의 위치 (`shared/config` vs `entities/site`)
+> - AI 온보딩·생성 기능의 feature 슬라이스명 (예: `features/site-onboarding`, `features/site-ai-generate` 등 후보 중 미정)
+> - 실제 데이터 입력 단계(엑셀 업로드 등) 관련 기능의 위치
+> - `entities/block` 내부에서 블록 variant를 어떻게 폴더로 구조화할지
+
+## 4. 이 프로젝트의 entities 목록 (고정)
+
+아래 5개가 핵심 entity입니다. 새 entity를 임의로 만들기 전에 이 목록에 포함시킬 수 있는지 먼저 확인하세요.
+
+- `entities/user` — 회원 정보, 사업자 인증 상태
+- `entities/block` — 블록 타입 정의(헤더/히어로/줄글/목록/갤러리/푸터 6종, 메뉴판은 목록에 통합) + 각 블록의 기본 렌더링 컴포넌트
+- `entities/site` — 사이트(사장님이 만든 가게 페이지) 데이터 구조, draft/배포 상태
+- `entities/post` — 커뮤니티 게시물/댓글 타입
+- `entities/plan` — 구독 플랜 정책(FREE/BASIC/PREMIUM 제한값). `PlanPolicyGuard` 같은 공통 정책 체크 로직이 여기 속함
+
+## 5. 예시: 에디터 페이지가 조립되는 방식
+
+```tsx
+// app/(editor)/editor/[siteId]/page.tsx
+// ⚠️ 이 파일에는 상태 관리나 API 호출 로직을 직접 작성하지 않습니다. 조립만 합니다.
+
+import { getSite, getSiteTitle } from "@/entities/site";
+import { EditorLayout } from "@/widgets/editor-layout";
+import { SiteRenderer } from "@/widgets/site-renderer";
+
+// Next 15부터 params는 Promise라서 async 페이지로 만들고 await로 받습니다.
+export default async function EditorPage({ params }: { params: Promise<{ siteId: string }> }) {
+  const { siteId } = await params;
+  const site = await getSite(siteId); // 목업 단계에서는 entities/site/api의 목업 함수
+
+  return (
+    <EditorLayout siteName={getSiteTitle(site)}>
+      <SiteRenderer site={site} />
+    </EditorLayout>
+  );
+}
+```
+
+`EditorLayout`(widget)이 상단 바(feature), 캔버스 틀, 오른쪽 패널을 조립하고, 캔버스 안에 들어갈 `SiteRenderer`는 페이지가 `children`으로 넘깁니다. **widget끼리는 서로 import할 수 없어서**(같은 레이어 규칙) `editor-layout`이 `site-renderer`를 직접 가져오지 못하기 때문입니다. 이렇게 조립하는 것이 app 레이어의 역할입니다.
+
+```tsx
+// app/(site)/site/[slug]/page.tsx   ← 서비스 헤더가 없는 별도 라우트 그룹
+// 배포된 실제 가게 페이지. SiteRenderer를 편집 기능 없이 재사용 — 렌더링 로직 중복 없음.
+
+import { SiteRenderer } from "@/widgets/site-renderer";
+
+export default async function PublicSitePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const site = await getPublishedSite(slug); // slug로 불러온 배포본 데이터
+  return <SiteRenderer site={site} />;
+}
+```
+
+`widgets/site-renderer`는 내부적으로 `entities/block`의 렌더링 컴포넌트들을 순회하며 그립니다. 편집 모드(`editable`)에서만 `features/editor-*`의 편집 기능(블록 이름 표시, 선택 테두리 등)을 얹습니다. 이렇게 하면 에디터 미리보기와 실제 배포 화면이 다르게 보이는 버그를 구조적으로 방지할 수 있습니다. 편집 상태(선택 여부 등)는 `entities/block`에 두지 않습니다.
+
+## 6. 라우트 그룹 (선택)
+
+`app/` 하위를 라우트 그룹(괄호 폴더)으로 묶을 수 있습니다. URL에는 영향을 주지 않습니다. 레이아웃을 나누거나, 로그인 필요 여부처럼 공통 규칙(예: 미들웨어로 로그인 체크를 일괄 적용)을 한 그룹에 거는 데 씁니다.
+
+**서비스 헤더 유무로 그룹을 나눕니다.** 루트 `app/layout.tsx`에는 `<html>`, 폰트, `ToastProvider`만 두고 서비스 헤더는 넣지 않습니다. 헤더가 있는 화면(메인, 요금제, 로그인·회원가입 등)은 `app/(main)/` 아래에 두고, `app/(main)/layout.tsx`가 헤더를 렌더링합니다. 헤더가 없는 화면(에디터, 배포된 사이트 등)은 `(main)` 밖의 별도 그룹에 둡니다.
+
+```
+app/
+  layout.tsx          ← html, body, 폰트, ToastProvider만
+  (main)/
+    layout.tsx        ← <Header /> + children (화면 높이를 헤더와 본문이 나눠 가짐)
+    page.tsx
+    pricing/page.tsx
+    (auth)/           ← 로그인·회원가입
+      login/page.tsx
+      signup/page.tsx
+    (dashboard)/      ← 로그인이 필요한 화면(마이페이지 등)을 묶을 때. 미들웨어로 로그인 체크를 일괄 적용
+      mypage/edit/page.tsx
+  (editor)/           ← 헤더 없음 (별도 레이아웃)
+    editor/[siteId]/page.tsx
+  not-found.tsx       ← 루트 404. 헤더가 없는 화면과 함께 쓰므로 홈으로 가는 링크를 직접 둠
+```
+
+`(main)` 안의 페이지는 헤더 높이를 직접 계산(`calc(100dvh-4rem)`)하지 않고, 최상위 요소에 `h-full`만 씁니다. 헤더 높이가 바뀌어도 페이지를 고치지 않기 위해서입니다.
+
+## 7. AI 어시스턴트를 위한 체크리스트
+
+새 파일을 만들거나 기존 파일을 옮길 때 아래를 확인하세요.
+
+- [ ] **이 코드의 위치가 이 문서의 규칙만으로 명확히 판단되는가?** 애매하다면 임의로 만들지 말고, 먼저 사용자에게 확인을 받거나 추천 위치(+이유, 가능하면 대안)를 제안하고 승인받은 뒤 진행할 것 (3번 섹션의 경고 참고)
+- [ ] 이 코드가 속할 레이어를 위 3번 순서(entities → features → widgets → shared)로 판단했는가?
+- [ ] import 방향이 `app → widgets → features → entities → shared`를 거스르지 않는가?
+- [ ] `entities/block` 관련 코드를 만들 때, 에디터 전용 로직(편집 상태, 선택 여부)이 섞여 들어가지 않았는가? (그건 `features/editor-*`로 가야 함)
+- [ ] `page.tsx`에 비즈니스 로직이나 API 호출을 직접 작성하지 않았는가? (widgets/features를 불러와 조립만 해야 함)
+- [ ] 새 entity를 만들려 하는가? → 4번 목록(user/block/site/post/plan) 외의 새 entity가 정말 필요한지 팀원과 먼저 확인

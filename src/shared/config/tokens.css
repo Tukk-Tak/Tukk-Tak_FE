@@ -1,0 +1,59 @@
+/*
+ * 뚝딱 서비스 UI 디자인 토큰 (Tailwind CSS 4, CSS-first)
+ *
+ * 위치: src/shared/config/tokens.css
+ * 사용: src/app/globals.css 에서 @import 'tailwindcss' 다음에 이 파일을 불러옵니다.
+ *
+ * - 이 파일은 "뚝딱 서비스 화면 자체"의 토큰입니다.
+ *   사용자가 만든 사이트의 테마 변수(--site-*)는 별도입니다.
+ * - @theme 안의 --color-* 변수는 Tailwind 유틸리티로 바로 쓸 수 있습니다.
+ *   예) --color-brand-orange → bg-brand-orange, text-brand-orange, border-brand-orange
+ * - 색상 코드는 Figma 기준입니다. 흰색과 검은색은 Tailwind 기본(white, black)을 씁니다.
+ */
+
+@theme {
+   /* ── 브랜드 색 ── */
+   --color-brand-orange: #e8622c; /* 진한 주황: 주요 버튼, 포인트, 선택 테두리 */
+   --color-brand-orange-hover: #d1501c; /* 진한 주황 버튼의 hover 색 */
+   --color-brand-orange-light: #fbf0e4; /* 배경에 까는 옅은 주황 */
+   --color-brand-brown: #5c3d2e; /* 갈색 */
+   --color-brand-cream: #fffaf5; /* 메인 페이지 배경 */
+   --color-brand-line: #ead8c2; /* 베이지 테두리, 구분선, 장식 점 */
+   --color-brand-grid: #e4d6c4; /* 에디터 캔버스 격자선 */
+
+   /* ── 상태 색 ── */
+   --color-state-success: #2e7d32; /* 성공, 확인 메시지 */
+   --color-state-error: #d64545; /* 오류 메시지, 오류 테두리 */
+   --color-field-readonly: #f5f2ee; /* 읽기 전용 입력 칸 배경 */
+   --color-field-disabled: #f5f5f4; /* 비활성 버튼 배경 */
+
+   /* ── 스크롤바 막대(thumb). 갈색 반투명이라 흰색·크림·옅은 주황 배경 어디서나 어울린다. 트랙은 투명이다. ── */
+   --color-scrollbar-thumb: rgb(92 61 46 / 0.28); /* 평소 */
+   --color-scrollbar-thumb-hover: rgb(92 61 46 / 0.5); /* 마우스를 올렸을 때 */
+
+   /* ── 시안을 보고 정한 근사값 (TODO: Figma 값 확인 후 교체) ── */
+   --radius-card: 1rem; /* 카드 둥글기 */
+   --shadow-card: 0 10px 30px rgb(92 61 46 / 0.08); /* 카드 그림자 */
+
+   /* ── TODO (Figma 확인 필요) ── */
+   /* --radius-control: ; 버튼·인풋 둥글기 */
+}
+
+/*
+ * 서비스 헤더 높이. Header가 이 값을 쓰고, 화면 높이에서 헤더를 빼야 하는 곳(예: 화면에 붙는 카드)도
+ * 숫자(4rem)를 직접 적지 않고 이 변수를 쓴다.
+ */
+:root {
+   --header-height: 4rem;
+}
+
+/*
+ * 폰트 패밀리. 실제 폰트는 src/app/layout.tsx 에서 next/font 로 불러와 변수로 내려준다.
+ * 변수가 html 요소에 붙으므로, 값이 사용하는 시점에 풀리도록 inline 으로 둔다.
+ */
+@theme inline {
+   --font-sans:
+      var(--font-noto-sans-kr), 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; /* 기본 */
+   /* 로고, 메인 제목 전용. Outfit에는 한글이 없어 한글은 Noto Sans KR로 표시된다. */
+   --font-display: var(--font-outfit-src), var(--font-noto-sans-kr), 'Noto Sans KR', sans-serif;
+}
