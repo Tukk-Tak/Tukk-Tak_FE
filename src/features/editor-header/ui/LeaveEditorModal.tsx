@@ -1,7 +1,6 @@
 'use client';
 
 import { useId } from 'react';
-import { BrandLogo } from '@/shared/ui/BrandLogo';
 import { Button } from '@/shared/ui/Button';
 import { Modal } from '@/shared/ui/Modal';
 
