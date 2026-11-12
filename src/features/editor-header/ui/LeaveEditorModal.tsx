@@ -17,7 +17,6 @@ export function LeaveEditorModal({ onClose, onLeave, onSaveAndLeave }: LeaveEdit
    return (
       <Modal titleId={titleId} onClose={onClose} className="max-w-md">
          <div className="p-8">
-            
             <h2 id={titleId} className="mt-6 text-2xl font-bold text-black">
                저장하지 않은 변경사항이 있어요
             </h2>
