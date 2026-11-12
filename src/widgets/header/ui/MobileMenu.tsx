@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { User } from '@/entities/user/types';
 import { isActivePath } from '@/shared/lib/isActivePath';
-import { Button } from '@/shared/ui/Button';
+import { CREATE_PATH } from '@/shared/config/routes';
+import { ButtonLink } from '@/shared/ui/ButtonLink';
 import { NAV_ITEMS } from './HeaderNav';
 
 // md 미만에서만 보이는 햄버거 메뉴. 데스크톱 헤더에서 숨겨진 nav와 "사이트 만들기"를 한 패널에 모은다.
@@ -69,7 +70,9 @@ export function MobileMenu({ user }: { user: User | null }) {
 
                {user && (
                   <div className="border-brand-line mt-2 border-t pt-4">
-                     <Button onClick={close}>사이트 만들기</Button>
+                     <ButtonLink href={CREATE_PATH} onClick={close}>
+                        사이트 만들기
+                     </ButtonLink>
                   </div>
                )}
             </nav>
