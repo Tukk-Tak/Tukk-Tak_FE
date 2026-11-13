@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { toApiError } from '@/shared/lib/apiClient';
 import { useSingleFlight } from '@/shared/lib/useSingleFlight';
 import { resetPassword } from '../api/resetPassword';
@@ -7,16 +7,20 @@ import { resetPassword } from '../api/resetPassword';
 export function useResetSubmit() {
    const { run, pending } = useSingleFlight();
    const [error, setError] = useState<string | null>(null);
+   // 입력을 고칠 때(clearError)마다 올라가는 번호. 요청 중에 입력을 고쳤다면, 그 요청의 실패 메시지는
+   // 이미 지나간 입력에 대한 것이므로 보여 주지 않는다.
+   const generationRef = useRef(0);
 
    const submit = useCallback(
       async (email: string, password: string): Promise<boolean> => {
          setError(null);
+         const generation = generationRef.current;
          const result = await run(async () => {
             try {
                await resetPassword(email, password);
                return true;
             } catch (caught) {
-               setError(toApiError(caught).message);
+               if (generation === generationRef.current) setError(toApiError(caught).message);
                return false;
             }
          });
@@ -25,7 +29,10 @@ export function useResetSubmit() {
       [run],
    );
 
-   const clearError = useCallback(() => setError(null), []);
+   const clearError = useCallback(() => {
+      generationRef.current += 1;
+      setError(null);
+   }, []);
 
    return { submit, submitting: pending, error, clearError };
 }

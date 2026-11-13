@@ -80,12 +80,15 @@ export function PasswordResetForm() {
          </Link>
 
          {/* pt-8: 링크(20px)와 제목이 겹치지 않는 최소 간격이다. */}
-         {/* 위쪽이 이 간격만큼 줄어든 것을 아래쪽 기준값(flex-basis 2rem = 32px)으로 맞춰서, 입력 칸이 화면의 정확한 가운데에 오게 한다. */}
-         {/* (빈 공간이나 padding으로 맞추면 화면이 낮을 때도 그만큼 높이를 차지해서, 내용은 들어가는데 몇 px 넘쳐 스크롤바만 생긴다. */}
-         {/*  기준값은 남는 높이를 나누는 데만 쓰이고, 내용이 더 크면 높이에 더해지지 않는다.) */}
+         {/* 가운데 맞춤 기준이 단계마다 다르다. */}
+         {/*  · 이메일, 인증번호 단계: 이메일 입력 칸을 가운데에 둔다. 위·아래가 남는 높이를 똑같이 나눠 가지고, */}
+         {/*    위쪽이 pt-8만큼 줄어든 것을 아래쪽 기준값(flex-basis 2rem = 32px)으로 맞춘다. 단계가 바뀌어도 입력 칸이 움직이지 않는다. */}
+         {/*  · 인증을 마친 뒤(새 비밀번호 단계): 아래가 길어져서 입력 칸 기준으로는 전체가 아래로 치우쳐 보이므로, */}
+         {/*    위·아래 영역을 내용 크기(auto)에서 시작해 남는 높이를 똑같이 나눠 가져서 제목부터 버튼까지 전체를 가운데에 둔다. */}
+         {/* (기준값을 빈 공간이나 padding으로 만들면 화면이 낮을 때도 그만큼 높이를 차지해서, 내용은 들어가는데 몇 px 넘쳐 스크롤바만 생긴다.) */}
          <form onSubmit={handleSubmit} className="flex flex-1 flex-col pt-8">
             {/* 위쪽: 제목은 입력 칸 바로 위에 붙는다. */}
-            <div className="flex flex-1 flex-col justify-end">
+            <div className={`flex flex-col justify-end ${verified ? 'flex-auto' : 'flex-1'}`}>
                <div className="mb-8">
                   <h1 className="text-2xl font-bold text-black">비밀번호를 재설정해요</h1>
                   <p className="mt-2 text-xs text-black/50">
@@ -103,7 +106,7 @@ export function PasswordResetForm() {
             />
 
             {/* 아래쪽: 인증번호 → 새 비밀번호 → 변경 버튼이 단계마다 나타난다. (인증번호 입력칸은 인증이 끝나면 사라진다.) */}
-            <div className="flex-[1_1_2rem]">
+            <div className={verified ? 'flex-auto' : 'flex-[1_1_2rem]'}>
                {/* pt-2: 이메일 칸 아래 문구 자리(22px)와 합쳐 입력 칸과 다음 칸 사이를 30px로 둔다. */}
                <div className="space-y-6 pt-2">
                   <EmailCodeField email={email} verification={emailVerification} />

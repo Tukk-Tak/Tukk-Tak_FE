@@ -11,6 +11,9 @@ import { Input } from './Input';
 import { OtpInput } from './OtpInput';
 
 const CODE_LENGTH = 6;
+// 인증번호 오류 문구의 id. 인증번호 칸이 aria-describedby로 가리킨다.
+const CODE_ERROR_ID = 'email-code-error';
+const CODE_EXPIRED_ID = 'email-code-expired';
 
 const formatTime = (totalSeconds: number) => {
    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
@@ -131,6 +134,11 @@ export function EmailCodeField({ email, verification }: EmailCodeFieldProps) {
 
    if (!sent) return null;
 
+   // 오류 문구가 있을 때만 그 id를 인증번호 칸에 연결한다. (둘 다 있으면 둘 다 읽어 준다.)
+   const describedBy =
+      [codeError && CODE_ERROR_ID, expired && CODE_EXPIRED_ID].filter(Boolean).join(' ') ||
+      undefined;
+
    return (
       <FormField label="인증번호" htmlFor="email-code-0" required>
          {/* 좁은 화면(320~360px)에서는 확인 버튼이 다음 줄로 내려가도록 줄바꿈을 허용한다. */}
@@ -142,6 +150,7 @@ export function EmailCodeField({ email, verification }: EmailCodeFieldProps) {
                value={verification.code}
                invalid={Boolean(codeError) || expired}
                disabled={expired || verification.verifying}
+               describedBy={describedBy}
                onChange={verification.changeCode}
             />
             <Button
@@ -160,9 +169,13 @@ export function EmailCodeField({ email, verification }: EmailCodeFieldProps) {
                {verification.verifying ? '확인 중' : '확인'}
             </Button>
          </div>
-         {codeError && <FieldMessage tone="error">{codeError.message}</FieldMessage>}
+         {codeError && (
+            <FieldMessage id={CODE_ERROR_ID} tone="error">
+               {codeError.message}
+            </FieldMessage>
+         )}
          {expired && (
-            <FieldMessage tone="error">
+            <FieldMessage id={CODE_EXPIRED_ID} tone="error">
                인증 시간이 지났어요. 인증번호를 다시 받아주세요
             </FieldMessage>
          )}
