@@ -2,25 +2,35 @@
 
 import { Check } from 'lucide-react';
 import { useState } from 'react';
-import { FieldMessage } from '@/shared/ui/FieldMessage';
-import { FormField } from '@/shared/ui/FormField';
-import { PasswordInput } from '@/shared/ui/PasswordInput';
-import { checkPasswordRules } from '../model/validation';
+import { checkPasswordRules } from '../lib/passwordRules';
+import { FieldMessage } from './FieldMessage';
+import { FormField } from './FormField';
+import { PasswordInput } from './PasswordInput';
 import { PasswordRules } from './PasswordRules';
 
-interface PasswordSectionProps {
+interface PasswordFieldsProps {
    password: string;
    passwordConfirm: string;
    onPasswordChange: (value: string) => void;
    onPasswordConfirmChange: (value: string) => void;
+   // 비밀번호 칸의 이름. 회원가입은 "비밀번호", 재설정은 "새 비밀번호"를 쓴다.
+   label?: string;
+   placeholder?: string;
+   // 이 입력이 화면에 나타날 때 비밀번호 칸으로 바로 포커스를 옮긴다. (이메일 인증 뒤에 나타나는 재설정이 쓴다.)
+   autoFocus?: boolean;
 }
 
-export function PasswordSection({
+// 비밀번호와 비밀번호 확인 입력. 규칙 충족 여부와 두 값의 일치 여부를 입력 칸 아래에 알려 준다.
+// 회원가입과 비밀번호 재설정이 함께 쓴다.
+export function PasswordFields({
    password,
    passwordConfirm,
    onPasswordChange,
    onPasswordConfirmChange,
-}: PasswordSectionProps) {
+   label = '비밀번호',
+   placeholder,
+   autoFocus = false,
+}: PasswordFieldsProps) {
    const [passwordTouched, setPasswordTouched] = useState(false);
    const [confirmTouched, setConfirmTouched] = useState(false);
 
@@ -35,11 +45,13 @@ export function PasswordSection({
    return (
       <div className="space-y-6">
          <div>
-            <FormField label="비밀번호" htmlFor="password" required>
+            <FormField label={label} htmlFor="password" required>
                <PasswordInput
                   id="password"
                   name="password"
                   autoComplete="new-password"
+                  autoFocus={autoFocus}
+                  placeholder={placeholder}
                   value={password}
                   invalid={showFailures}
                   aria-describedby="password-rules"
@@ -76,6 +88,7 @@ export function PasswordSection({
                   id="passwordConfirm"
                   name="passwordConfirm"
                   autoComplete="new-password"
+                  placeholder={placeholder}
                   value={passwordConfirm}
                   invalid={confirmMismatch}
                   aria-describedby="password-confirm-message"

@@ -4,7 +4,9 @@ import { useRef, useState } from 'react';
 import { useGuestOnly } from '@/entities/user/model/useGuestOnly';
 import { scrollAreaToTop } from '@/shared/ui/ScrollArea';
 import type { GoogleAuthError } from '../model/googleAuthError';
-import { useEmailVerification } from '../model/useEmailVerification';
+import { useEmailVerification } from '@/shared/lib/useEmailVerification';
+import { sendEmailCode } from '../api/sendEmailCode';
+import { verifyEmailCode } from '../api/verifyEmailCode';
 import type { AccountValues } from '../types';
 import { AccountStep } from './AccountStep';
 import { SignupStepper } from './SignupStepper';
@@ -23,7 +25,10 @@ export function SignupForm({ googleError }: { googleError?: GoogleAuthError }) {
       password: '',
       passwordConfirm: '',
    });
-   const emailVerification = useEmailVerification();
+   const emailVerification = useEmailVerification({
+      sendCode: sendEmailCode,
+      verifyCode: verifyEmailCode,
+   });
 
    const rootRef = useRef<HTMLDivElement>(null);
 

@@ -6,35 +6,7 @@ export const onlyDigits = (value: string) => value.replace(/\D/g, '');
 
 // 이메일 형식 검사(isValidEmail)는 로그인과 함께 쓰므로 shared/lib에 있다.
 
-// ── 비밀번호 ──
-// 특수문자로 인정하는 ASCII 문자 32개. 한글, 이모지, 공백은 특수문자로 보지 않는다.
-// TODO: 서버가 허용하는 특수문자 범위가 확정되면 이 집합만 맞춘다.
-const SPECIAL_CHARACTER_PATTERN = /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/;
-
-const PASSWORD_RULES = [
-   { id: 'letter', label: '영문 포함', test: (value: string) => /[A-Za-z]/.test(value) },
-   { id: 'number', label: '숫자 포함', test: (value: string) => /\d/.test(value) },
-   {
-      id: 'special',
-      label: '특수문자 포함',
-      test: (value: string) => SPECIAL_CHARACTER_PATTERN.test(value),
-   },
-   {
-      id: 'length',
-      label: '8~16자',
-      test: (value: string) => value.length >= 8 && value.length <= 16,
-   },
-];
-
-export interface PasswordRuleResult {
-   id: string;
-   label: string;
-   passed: boolean;
-}
-
-export function checkPasswordRules(password: string): PasswordRuleResult[] {
-   return PASSWORD_RULES.map(({ id, label, test }) => ({ id, label, passed: test(password) }));
-}
+// 비밀번호 규칙은 재설정과 함께 쓰므로 shared/lib/passwordRules에 있다.
 
 // ── 전화번호 ──
 const MOBILE_PATTERN = /^01[016789]\d{7,8}$/;
