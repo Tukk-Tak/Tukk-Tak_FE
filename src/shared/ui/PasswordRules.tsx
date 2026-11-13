@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import type { PasswordRuleResult } from '../model/validation';
+import type { PasswordRuleResult } from '../lib/passwordRules';
 
 interface PasswordRulesProps {
    results: PasswordRuleResult[];

@@ -2,8 +2,6 @@ import { useCallback, useRef, useState } from 'react';
 import { toApiError } from '@/shared/lib/apiClient';
 import { useCountdown } from '@/shared/lib/useCountdown';
 import { useSingleFlight } from '@/shared/lib/useSingleFlight';
-import { sendEmailCode } from '../api/sendEmailCode';
-import { verifyEmailCode } from '../api/verifyEmailCode';
 
 export type EmailVerificationStatus = 'idle' | 'sent' | 'verified';
 
@@ -17,8 +15,16 @@ const toFailure = (error: unknown): Failure => {
    return { code, message };
 };
 
+interface EmailVerificationOptions {
+   // 인증번호를 보낸다. 쓰임에 따라 서버가 다르게 판단한다. (가입: 이미 가입된 이메일이면 오류 / 재설정: 가입되지 않은 이메일이면 오류)
+   sendCode: (email: string) => Promise<{ expiresInSeconds: number }>;
+   // 인증번호를 확인한다. 맞지 않으면 예외를 던진다.
+   verifyCode: (email: string, code: string) => Promise<void>;
+}
+
 // 이메일 인증 흐름: 인증번호 받기(idle → sent) → 인증번호 확인(sent → verified)
-export function useEmailVerification() {
+// 회원가입과 비밀번호 재설정이 함께 쓰고, 서버 요청만 각자 넘겨 받는다. (함수는 매 렌더링마다 새로 만들지 말고 고정된 것을 넘긴다.)
+export function useEmailVerification({ sendCode, verifyCode }: EmailVerificationOptions) {
    const [status, setStatus] = useState<EmailVerificationStatus>('idle');
    const [code, setCode] = useState('');
    const [sendError, setSendError] = useState<Failure | null>(null);
@@ -38,7 +44,7 @@ export function useEmailVerification() {
             setSendError(null);
             setCodeError(null);
             try {
-               const { expiresInSeconds } = await sendEmailCode(email);
+               const { expiresInSeconds } = await sendCode(email);
                if (generation !== generationRef.current) return;
                setCode('');
                setStatus('sent');
@@ -48,7 +54,7 @@ export function useEmailVerification() {
                setSendError(toFailure(error));
             }
          }),
-      [runSend, startCountdown],
+      [runSend, sendCode, startCountdown],
    );
 
    const confirmCode = useCallback(
@@ -57,7 +63,7 @@ export function useEmailVerification() {
             const generation = generationRef.current;
             setCodeError(null);
             try {
-               await verifyEmailCode(email, code);
+               await verifyCode(email, code);
                if (generation !== generationRef.current) return;
                setStatus('verified');
                stopCountdown();
@@ -66,7 +72,7 @@ export function useEmailVerification() {
                setCodeError(toFailure(error));
             }
          }),
-      [runVerify, code, stopCountdown],
+      [runVerify, verifyCode, code, stopCountdown],
    );
 
    // 입력을 고치면 이전 인증번호 오류는 더 이상 유효하지 않다.

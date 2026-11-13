@@ -1,17 +1,19 @@
 'use client';
 
+import Link from 'next/link';
 import type { FormEvent } from 'react';
+import { isPasswordValid } from '@/shared/lib/passwordRules';
+import type { EmailVerificationState } from '@/shared/lib/useEmailVerification';
 import { useGoogleAuthStart } from '@/shared/lib/useGoogleAuthStart';
 import { Button } from '@/shared/ui/Button';
+import { EmailVerifyField } from '@/shared/ui/EmailVerifyField';
 import { GoogleButton } from '@/shared/ui/GoogleButton';
 import { OrDivider } from '@/shared/ui/OrDivider';
+import { PasswordFields } from '@/shared/ui/PasswordFields';
+import { SIGNUP_ERROR } from '../model/errorCodes';
 import { GOOGLE_AUTH_ERROR, type GoogleAuthError } from '../model/googleAuthError';
-import type { EmailVerificationState } from '../model/useEmailVerification';
-import { checkPasswordRules } from '../model/validation';
 import type { AccountValues } from '../types';
-import { EmailVerification } from './EmailVerification';
 import { GoogleAuthErrorMessage } from './GoogleAuthErrorMessage';
-import { PasswordSection } from './PasswordSection';
 
 interface AccountStepProps {
    account: AccountValues;
@@ -36,7 +38,7 @@ export function AccountStep({
 
    const canGoNext =
       emailVerification.status === 'verified' &&
-      checkPasswordRules(account.password).every((rule) => rule.passed) &&
+      isPasswordValid(account.password) &&
       account.passwordConfirm === account.password;
 
    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -50,12 +52,23 @@ export function AccountStep({
          <p className="mt-2 text-xs text-black/50">먼저 로그인에 쓸 계정을 만들어요.</p>
 
          <div className="mt-10 space-y-6">
-            <EmailVerification
+            <EmailVerifyField
                email={account.email}
                verification={emailVerification}
                onEmailChange={(email) => onChange({ email })}
+               // 이미 가입된 이메일이면 로그인으로 바로 갈 수 있게 알려 준다.
+               renderSendErrorExtra={(error) =>
+                  error.code === SIGNUP_ERROR.EMAIL_ALREADY_REGISTERED && (
+                     <>
+                        {' · '}
+                        <Link href="/login" className="cursor-pointer underline underline-offset-4">
+                           로그인하기
+                        </Link>
+                     </>
+                  )
+               }
             />
-            <PasswordSection
+            <PasswordFields
                password={account.password}
                passwordConfirm={account.passwordConfirm}
                onPasswordChange={(password) => onChange({ password })}
