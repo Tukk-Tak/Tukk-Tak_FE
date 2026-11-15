@@ -21,6 +21,7 @@ export function HeaderNav() {
                <Link
                   key={href}
                   href={href}
+                  data-leave-guard
                   aria-current={active ? 'page' : undefined}
                   className={`cursor-pointer text-sm font-semibold hover:text-brand-orange ${
                      active ? 'text-brand-orange' : 'text-black/70'
