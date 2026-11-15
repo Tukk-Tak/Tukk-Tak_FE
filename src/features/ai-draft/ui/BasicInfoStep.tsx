@@ -27,6 +27,7 @@ export function BasicInfoStep() {
             <Input
                tone="brown"
                id="ai-store-name"
+               aria-required="true"
                name="storeName"
                autoComplete="organization"
                placeholder="예: 카페 오롯"
@@ -69,6 +70,7 @@ export function BasicInfoStep() {
                   <Input
                      tone="brown"
                      aria-label="업종 직접 입력"
+                     aria-required="true"
                      name="businessTypeCustom"
                      placeholder="예: 베이커리, 브런치"
                      maxLength={BUSINESS_TYPE_CUSTOM_MAX}

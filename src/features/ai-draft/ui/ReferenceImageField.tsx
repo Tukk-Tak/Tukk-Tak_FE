@@ -123,6 +123,7 @@ export function ReferenceImageField() {
                      <Plus className="size-4" aria-hidden />
                      참고 이미지 올리기
                   </span>
+                  {/* TODO: 이 문구는 AI 서버가 참고 이미지에서 대표색을 뽑아 쓴다는 전제이다. 화면에서 색을 뽑지는 않는다. 서버 동작이 달라지면 문구도 함께 고친다. */}
                   <span className="text-xs text-[#A6A09B]">대표색을 뽑아 팔레트 참고로 써요</span>
                   <span className="text-xs text-[#A6A09B]">
                      눌러서 고르거나 끌어다 놓을 수 있어요 (png, jpg)

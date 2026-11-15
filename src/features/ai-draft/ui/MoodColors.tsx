@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAiDraftForm } from '../model/AiDraftFormContext';
 import { getCheckColor } from '../model/color';
 import { MAX_MOOD_COLORS, PALETTE_COLORS } from '../model/options';
@@ -24,6 +24,7 @@ function Swatch({ hex, label, selected, disabled = false, onClick }: SwatchProps
          aria-pressed={selected}
          aria-label={label}
          title={label}
+         data-hex={hex}
          disabled={disabled}
          onClick={onClick}
          className={`flex aspect-square w-full cursor-pointer items-center justify-center rounded-full border border-black/10 transition-opacity disabled:cursor-not-allowed disabled:opacity-35 ${
@@ -43,6 +44,8 @@ function Swatch({ hex, label, selected, disabled = false, onClick }: SwatchProps
 export function MoodColors() {
    const { values, update } = useAiDraftForm();
    const [pickerOpen, setPickerOpen] = useState(false);
+   // 모달에서 막 확정한 색. 모달이 닫힌 뒤 이 색의 원으로 포커스를 옮긴다.
+   const focusHexRef = useRef<string | null>(null);
 
    const selected = values.moodColors;
    const customColors = getCustomColors(values);
@@ -55,8 +58,21 @@ export function MoodColors() {
       else if (!full) update({ moodColors: [...selected, hex] });
    };
 
+   // + 버튼은 3개가 차면 비활성화되거나 사라져서, 모달이 닫힌 뒤 되돌아갈 포커스 자리가 없어진다.
+   // 그래서 새로 생긴 색 원으로 포커스를 옮긴다. 모달이 닫힌 뒤 실행되도록 효과에서 처리한다.
+   useEffect(() => {
+      if (pickerOpen || !focusHexRef.current) return;
+      document
+         .querySelector<HTMLButtonElement>(`button[data-hex="${focusHexRef.current}"]`)
+         ?.focus();
+      focusHexRef.current = null;
+   }, [pickerOpen, selected]);
+
    const addCustom = (hex: string) => {
-      if (!selected.includes(hex) && !full) update({ moodColors: [...selected, hex] });
+      if (!selected.includes(hex) && !full) {
+         update({ moodColors: [...selected, hex] });
+         focusHexRef.current = hex;
+      }
       setPickerOpen(false);
    };
 

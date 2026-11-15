@@ -24,7 +24,7 @@ function pushGuardEntry() {
    );
 }
 
-// 바로 앞 히스토리 항목이 허브인지. 허브에서 눌러 들어왔다면 뒤로 가기만으로 허브에 돌아갈 수 있고,
+// 지금 위치에서 steps칸 앞의 히스토리 항목이 허브인지. 허브에서 눌러 들어왔다면 뒤로 가기만으로 허브에 돌아갈 수 있고,
 // 주소를 직접 열었거나 다른 화면에서 왔다면 뒤로 가기가 엉뚱한 곳(사이트 밖 포함)으로 가므로 허브 주소로 바꿔 보낸다.
 // 브라우저의 Navigation API로 확인하고, 지원하지 않는 브라우저는 '아니다'로 보고 허브로 보낸다.
 interface NavigationLike {
@@ -32,12 +32,12 @@ interface NavigationLike {
    entries?: () => { url: string | null }[];
 }
 
-function isPreviousEntryHub() {
+function isEntryHub(steps: number) {
    const navigation = (window as unknown as { navigation?: NavigationLike }).navigation;
    const index = navigation?.currentEntry?.index;
-   if (typeof index !== 'number' || index < 1) return false;
+   if (typeof index !== 'number' || index < steps) return false;
 
-   const previousUrl = navigation?.entries?.()[index - 1]?.url;
+   const previousUrl = navigation?.entries?.()[index - steps]?.url;
    if (!previousUrl) return false;
    try {
       return new URL(previousUrl).pathname === CREATE_PATH;
@@ -62,29 +62,53 @@ export function useLeaveGuard(shouldConfirm: boolean) {
    const bypassRef = useRef(false);
    // 나가는 중에 오는 뒤로 가기 신호는 무시한다. (허브로 나가는 뒤로 가기가 다시 가로채이는 것을 막는다)
    const leavingRef = useRef(false);
+   // 지금 보고 있는 히스토리 항목이 쌓아 둔 보호용 항목인지. (아니면 그 아래의 원래 항목이다)
+   const atGuardRef = useRef(true);
+   // 확인 모달이 떠 있는지. 모달이 떠 있는 동안 뒤로 가기가 또 와도 확인 없이 나가지 못하게 한다.
+   const requestRef = useRef<LeaveRequest | null>(null);
 
    useEffect(() => {
       shouldConfirmRef.current = shouldConfirm;
+      requestRef.current = request;
    });
 
+   // 허브로 나간다. 보호용 항목 위에 있으면 허브가 두 칸 앞에 있다.
    const leaveToHub = useCallback(() => {
       leavingRef.current = true;
-      if (isPreviousEntryHub()) window.history.back();
+      const steps = atGuardRef.current ? 2 : 1;
+      if (isEntryHub(steps)) window.history.go(-steps);
       else router.replace(CREATE_PATH);
    }, [router]);
+
+   // 보호용 항목을 다시 쌓아 다음 뒤로 가기도 가로챌 수 있게 한다.
+   const restoreGuard = useCallback(() => {
+      pushGuardEntry();
+      atGuardRef.current = true;
+   }, []);
 
    useEffect(() => {
       // 이 화면 위에 뒤로 가기용 항목을 하나 쌓아 둔다. 개발 모드에서 효과가 두 번 실행돼도 한 번만 쌓는다.
       if (!hasGuardMark(window.history.state)) pushGuardEntry();
+      atGuardRef.current = true;
 
       const handlePopState = (event: PopStateEvent) => {
          if (leavingRef.current) return;
          // 앞으로 가기로 쌓아 둔 항목에 돌아온 경우다. 화면은 그대로 둔다.
-         if (hasGuardMark(event.state)) return;
+         if (hasGuardMark(event.state)) {
+            atGuardRef.current = true;
+            return;
+         }
 
          // 뒤로 가기로 이 화면의 원래 항목에 도착했다.
-         if (shouldConfirmRef.current) setRequest('back');
-         else leaveToHub();
+         atGuardRef.current = false;
+         if (!shouldConfirmRef.current) {
+            leaveToHub();
+            return;
+         }
+         // 모달을 띄우는 즉시 보호용 항목을 다시 쌓는다. 모달이 떠 있는 동안 뒤로 가기를 또 눌러도
+         // 확인 없이 나가지 않고, 실제로 나가는 것은 [확인]을 눌렀을 때뿐이다.
+         restoreGuard();
+         if (requestRef.current === null) setRequest('back');
       };
 
       const handleClick = (event: MouseEvent) => {
@@ -122,7 +146,7 @@ export function useLeaveGuard(shouldConfirm: boolean) {
          window.removeEventListener('popstate', handlePopState);
          document.removeEventListener('click', handleClick, true);
       };
-   }, [leaveToHub]);
+   }, [leaveToHub, restoreGuard]);
 
    const confirm = () => {
       const current = request;
@@ -148,8 +172,7 @@ export function useLeaveGuard(shouldConfirm: boolean) {
    };
 
    const cancel = () => {
-      // 뒤로 가기로 원래 항목까지 내려왔으므로, 다시 한 칸 쌓아 다음 뒤로 가기도 가로챌 수 있게 한다.
-      if (request === 'back') pushGuardEntry();
+      // 보호용 항목은 모달을 띄울 때 이미 다시 쌓아 두었으므로 닫기만 하면 된다.
       pendingLinkRef.current = null;
       setRequest(null);
    };

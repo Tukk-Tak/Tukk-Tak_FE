@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { usePlan } from '@/entities/plan';
 import {
    AiDraftFormProvider,
@@ -47,6 +47,7 @@ function WizardBody() {
    const planState = usePlan();
    const { values } = useAiDraftForm();
    const [current, setCurrent] = useState(0);
+   const viewportRef = useRef<HTMLDivElement>(null);
    // 직접 누른 [이전](1단계)과 [건너뛰고 직접 편집하기]의 확인 모달. 뒤로 가기·헤더 링크는 useLeaveGuard가 맡는다.
    const [leaveRequest, setLeaveRequest] = useState<Exclude<LeaveModalKind, 'page'> | null>(null);
 
@@ -67,9 +68,15 @@ function WizardBody() {
    const remainingAi =
       planState.status === 'loading' ? null : PLAN_LIMITS[planState.plan.tier].aiUsagePerMonth;
 
+   // 모든 단계 이동(이전, 다음, 단계 목록, 수정 버튼)이 이 함수를 거친다. 새 단계의 제목이 보이도록 본문을 맨 위로 올린다.
+   const moveTo = (next: number) => {
+      setCurrent(next);
+      viewportRef.current?.scrollTo({ top: 0 });
+   };
+
    const goPrev = () => {
       if (current > 0) {
-         setCurrent(current - 1);
+         moveTo(current - 1);
          return;
       }
       if (hasInput) setLeaveRequest('restart');
@@ -78,9 +85,9 @@ function WizardBody() {
 
    // 최종 확인의 [수정]에서 해당 단계로 돌아간다.
    const goToStep = (stepId: EditableStepId) =>
-      setCurrent(AI_DRAFT_STEPS.findIndex((step) => step.id === stepId));
+      moveTo(AI_DRAFT_STEPS.findIndex((step) => step.id === stepId));
 
-   const goNext = () => setCurrent((index) => Math.min(index + 1, AI_DRAFT_STEP_COUNT - 1));
+   const goNext = () => moveTo(Math.min(current + 1, AI_DRAFT_STEP_COUNT - 1));
 
    const skip = () => {
       if (hasInput) setLeaveRequest('skip');
@@ -109,7 +116,7 @@ function WizardBody() {
                         variant="tabs"
                         current={current}
                         completed={completed}
-                        onSelect={setCurrent}
+                        onSelect={moveTo}
                      />
                   </ScrollArea>
                </div>
@@ -118,13 +125,13 @@ function WizardBody() {
                      variant="list"
                      current={current}
                      completed={completed}
-                     onSelect={setCurrent}
+                     onSelect={moveTo}
                   />
                </div>
             </aside>
 
             <div className="relative min-h-0 min-w-0 flex-1">
-               <ScrollArea className="h-full">
+               <ScrollArea className="h-full" viewportRef={viewportRef}>
                   <div className="px-[4%] py-4 md:pl-10 md:pr-15 md:py-4">
                      <StepPanel current={current}>
                         {current === 0 && <BasicInfoStep />}
