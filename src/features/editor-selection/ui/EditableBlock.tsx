@@ -1,11 +1,13 @@
 'use client';
 
 import type { KeyboardEvent, ReactNode } from 'react';
-import { BLOCK_TYPE_LABEL, type Section } from '@/entities/block';
+import { BLOCK_TYPE_LABEL, getVariantLabel, type Section } from '@/entities/block';
 import { useOptionalEditorSelection } from '../model/EditorSelectionContext';
 
 interface EditableBlockProps {
    section: Section;
+   // 사이트에서 몇 번째 블록인지(1부터). 같은 종류와 구조의 블록이 여럿일 때 접근 가능한 이름으로 구별한다.
+   order: number;
    children: ReactNode;
 }
 
@@ -14,11 +16,15 @@ interface EditableBlockProps {
 //   블록 안의 링크와 버튼은 눌리지 않게 막는다. (inert: 클릭과 키보드 포커스를 모두 막는다.)
 // - 미리보기: 표시를 모두 없애 완성된 모습 그대로 보여 준다. (틀 자체는 남겨 블록이 다시 그려지지 않게 한다.)
 // 라벨과 테두리를 놓을 자리는 음수 여백으로 블록 사이의 빈 공간에서 빌려 와서, 편집 모드와 미리보기의 배치가 같다.
-export function EditableBlock({ section, children }: EditableBlockProps) {
+export function EditableBlock({ section, order, children }: EditableBlockProps) {
    const selection = useOptionalEditorSelection();
    const enabled = selection?.enabled ?? false;
    const selected = enabled && selection?.selected?.id === section.id;
    const label = BLOCK_TYPE_LABEL[section.type];
+
+   // 안쪽 제목은 inert로 가려져 읽히지 않으므로, 블록을 구별할 정보(순서, 종류, 구조)를 이름에 담는다.
+   // 선택 여부는 aria-pressed가 알리므로 이름에는 넣지 않는다.
+   const accessibleName = `${order}번째 ${label}(${getVariantLabel(section.type, section.variant)}) 블록`;
 
    const select = () =>
       selection?.toggle({ id: section.id, type: section.type, variant: section.variant });
@@ -38,7 +44,7 @@ export function EditableBlock({ section, children }: EditableBlockProps) {
          role={enabled ? 'button' : undefined}
          tabIndex={enabled ? 0 : undefined}
          aria-pressed={enabled ? selected : undefined}
-         aria-label={enabled ? `${label} 블록 ${selected ? '선택 해제' : '선택'}` : undefined}
+         aria-label={enabled ? accessibleName : undefined}
          onClick={enabled ? select : undefined}
          onKeyDown={enabled ? handleKeyDown : undefined}
          className={
