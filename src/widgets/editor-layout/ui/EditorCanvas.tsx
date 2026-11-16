@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
+import { useEditorSelection } from '@/features/editor-selection';
 import { ScrollArea } from '@/shared/ui/ScrollArea';
 import type { DeviceKind } from '../types';
 import { CanvasInfoBar } from './CanvasInfoBar';
@@ -21,12 +22,19 @@ interface EditorCanvasProps {
 
 // 왼쪽 캔버스. 사이트 길이가 길면 이 영역 안에서만 세로로 스크롤되고, 안내와 기기 전환은 그 위에 떠 있다.
 export function EditorCanvas({ device, onDeviceChange, siteName, children }: EditorCanvasProps) {
+   const { selected, clear } = useEditorSelection();
+
+   // 블록이 아닌 빈 곳(사이트 바깥 배경, 블록 사이의 빈 공간)을 누르면 선택을 해제한다.
+   const clearOnBackground = (event: MouseEvent<HTMLDivElement>) => {
+      if (selected && !(event.target as Element).closest('[data-editable-block]')) clear();
+   };
+
    return (
       <div className="relative min-w-0 flex-1 bg-brand-orange-light">
          {/* 격자는 스크롤되지 않고 영역에 고정된다. (스크롤 영역은 안쪽에 둔다.) */}
          <div className={`absolute inset-0 ${GRID_CLASS}`}>
-            <ScrollArea className="size-full">
-               <div className="px-8 pt-16 pb-28">
+            <ScrollArea className="size-full" contentClassName="flex min-h-full flex-col">
+               <div className="flex-1 px-8 pt-16 pb-28" onClick={clearOnBackground}>
                   <ScaledFrame width={DEVICE_WIDTH[device]}>{children}</ScaledFrame>
                </div>
             </ScrollArea>

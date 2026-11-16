@@ -1,5 +1,6 @@
 import { BlockRenderer } from '@/entities/block';
 import { themeToCssVars, type SiteContent } from '@/entities/site';
+import { EditableBlock } from '@/features/editor-selection';
 
 // 테마 변수는 래퍼에 주입해서 이 안에서만 적용한다. (한 화면에 여러 사이트가 있어도 서로 섞이지 않는다)
 // 배치는 화면이 아니라 래퍼 너비 기준(컨테이너 쿼리)이라 에디터 캔버스 안에서도 같게 동작한다.
@@ -7,7 +8,14 @@ import { themeToCssVars, type SiteContent } from '@/entities/site';
 // 여백과 간격: PC(@3xl 이상) 좌우 56px, 위아래 64px, 줄 사이 64px, 나란히 놓인 블록 사이 32px
 //             모바일 좌우 24px, 위아래 40px, 줄 사이 40px
 // break-keep: 한글이 단어(띄어쓰기) 단위로 줄바뀜되게 한다. 띄어쓰기 없는 긴 글자는 wrap-anywhere로 넘치지 않게 자른다.
-export function SiteRenderer({ site }: { site: SiteContent }) {
+// editable: 에디터 캔버스에서만 켠다. 블록마다 종류 라벨과 선택 기능이 붙고, 배포된 사이트에서는 꺼 둔다.
+export function SiteRenderer({
+   site,
+   editable = false,
+}: {
+   site: SiteContent;
+   editable?: boolean;
+}) {
    return (
       <div
          style={themeToCssVars(site.theme)}
@@ -18,7 +26,13 @@ export function SiteRenderer({ site }: { site: SiteContent }) {
                <div key={row.id} className="flex flex-col gap-10 @3xl:flex-row @3xl:gap-8">
                   {row.sections.map((section) => (
                      <div key={section.id} className="min-w-0 flex-1 @container">
-                        <BlockRenderer section={section} />
+                        {editable ? (
+                           <EditableBlock section={section}>
+                              <BlockRenderer section={section} />
+                           </EditableBlock>
+                        ) : (
+                           <BlockRenderer section={section} />
+                        )}
                      </div>
                   ))}
                </div>

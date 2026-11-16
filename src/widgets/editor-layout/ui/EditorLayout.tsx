@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { EditorHeader, type EditorMode } from '@/features/editor-header';
+import { EditorSelectionProvider } from '@/features/editor-selection';
 import type { DeviceKind, PanelTab } from '../types';
 import { EditorCanvas } from './EditorCanvas';
 import { EditorPanel } from './EditorPanel';
@@ -21,23 +22,26 @@ export function EditorLayout({ siteName, children }: EditorLayoutProps) {
    const isDirty = true;
 
    return (
-      <div className="flex h-full flex-col">
-         <EditorHeader mode={mode} onModeChange={setMode} isDirty={isDirty} />
-         <div className="flex min-h-0 flex-1">
-            <EditorCanvas device={device} onDeviceChange={setDevice} siteName={siteName}>
-               {children}
-            </EditorCanvas>
-            {/* 미리보기에서는 패널을 없애지 않고 폭만 0으로 줄인다. 캔버스가 그만큼 서서히 넓어진다. */}
-            {/* 안쪽 패널은 폭이 고정이라 줄어드는 동안 내용이 다시 배치되지 않고 오른쪽으로 밀려난다. inert: 숨긴 동안 포커스가 들어가지 않게 한다. */}
-            <div
-               inert={mode !== 'edit'}
-               className={`flex shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none ${
-                  mode === 'edit' ? 'w-[370px]' : 'w-0'
-               }`}
-            >
-               <EditorPanel tab={tab} onTabChange={setTab} />
+      // 블록을 선택하면 오른쪽 패널을 요소 편집 탭으로 옮긴다. 미리보기에서는 선택 기능을 끈다.
+      <EditorSelectionProvider enabled={mode === 'edit'} onSelect={() => setTab('element')}>
+         <div className="flex h-full flex-col">
+            <EditorHeader mode={mode} onModeChange={setMode} isDirty={isDirty} />
+            <div className="flex min-h-0 flex-1">
+               <EditorCanvas device={device} onDeviceChange={setDevice} siteName={siteName}>
+                  {children}
+               </EditorCanvas>
+               {/* 미리보기에서는 패널을 없애지 않고 폭만 0으로 줄인다. 캔버스가 그만큼 서서히 넓어진다. */}
+               {/* 안쪽 패널은 폭이 고정이라 줄어드는 동안 내용이 다시 배치되지 않고 오른쪽으로 밀려난다. inert: 숨긴 동안 포커스가 들어가지 않게 한다. */}
+               <div
+                  inert={mode !== 'edit'}
+                  className={`flex shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none ${
+                     mode === 'edit' ? 'w-92.5' : 'w-0'
+                  }`}
+               >
+                  <EditorPanel tab={tab} onTabChange={setTab} />
+               </div>
             </div>
          </div>
-      </div>
+      </EditorSelectionProvider>
    );
 }
