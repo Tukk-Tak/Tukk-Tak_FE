@@ -1,5 +1,7 @@
 // 여러 곳에서 같은 주소로 보내는 경로. 주소를 바꿀 때 한 곳만 고치도록 모아 둔다.
 
+export const HOME_PATH = '/';
+
 // 사이트 만들기 허브. 아무 카드도 선택되지 않은 채 열린다.
 export const CREATE_PATH = '/create';
 
