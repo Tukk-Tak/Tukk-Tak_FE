@@ -57,6 +57,7 @@ export function MobileMenu({ user }: { user: User | null }) {
                      <Link
                         key={href}
                         href={href}
+                        data-leave-guard
                         onClick={close}
                         aria-current={active ? 'page' : undefined}
                         className={`cursor-pointer py-3 text-sm font-semibold hover:text-brand-orange ${
