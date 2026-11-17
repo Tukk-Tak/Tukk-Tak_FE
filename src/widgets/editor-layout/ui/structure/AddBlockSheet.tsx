@@ -108,10 +108,14 @@ export function AddBlockSheet({ existingTypes, onAdd, triggerRef, onClose }: Add
       };
    }, [triggerRef]);
 
-   // 단계가 바뀔 때 첫 항목에 포커스를 둬서 키보드로 이어서 고를 수 있게 한다.
+   // 시트가 처음 화면에 나타났을 때와 단계가 바뀔 때 첫 항목에 포커스를 둬서 키보드로 이어서 고를 수 있게 한다.
+   // 위치를 계산하기 전에는 시트가 아직 그려지지 않으므로, 그려진 뒤(mounted)에 실행한다.
+   // 이후 위치만 다시 계산될 때는 mounted가 그대로라서 사용자의 포커스를 빼앗지 않는다.
+   const mounted = position !== null;
    useEffect(() => {
+      if (!mounted) return;
       sheetRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus();
-   }, [type]);
+   }, [type, mounted]);
 
    const itemClass =
       'flex w-full items-center gap-3.5 rounded-xl border border-brand-line bg-white p-2.5 text-left transition-colors not-disabled:cursor-pointer not-disabled:hover:border-brand-orange disabled:opacity-45';

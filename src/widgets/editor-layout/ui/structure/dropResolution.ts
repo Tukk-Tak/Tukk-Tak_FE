@@ -3,6 +3,7 @@ import {
    pointerWithin,
    type CollisionDetection,
    type DragEndEvent,
+   type DragMoveEvent,
    type DragOverEvent,
 } from '@dnd-kit/core';
 import type { Row } from '@/entities/site';
@@ -21,14 +22,21 @@ function valueOf(id: string | number) {
 }
 
 // 블록을 놓을 곳을 찾는 순서: 줄 오른쪽의 "옆에 놓기" 자리 → 나란한 줄 안의 블록 → 가장 가까운 줄.
-// (키보드로 끌 때는 포인터 좌표가 없어서 가장 가까운 줄만 찾는다.)
+// 키보드로 끌 때는 포인터 좌표가 없으므로, 끌고 있는 블록의 가운데를 포인터 위치로 본다.
+// 그래서 방향키로 블록을 오른쪽 자리나 다른 블록 위까지 옮기면 나란히 놓기와 좌우 바꾸기도 할 수 있다.
 export const collisionDetection: CollisionDetection = (args) => {
    const only = (prefix: string) =>
       args.droppableContainers.filter((container) => String(container.id).startsWith(prefix));
 
-   const pair = pointerWithin({ ...args, droppableContainers: only('pair:') });
+   const rect = args.collisionRect;
+   const pointerCoordinates = args.pointerCoordinates ?? {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+   };
+
+   const pair = pointerWithin({ ...args, pointerCoordinates, droppableContainers: only('pair:') });
    if (pair.length > 0) return pair;
-   const item = pointerWithin({ ...args, droppableContainers: only('item:') });
+   const item = pointerWithin({ ...args, pointerCoordinates, droppableContainers: only('item:') });
    if (item.length > 0) return item;
    return closestCenter({ ...args, droppableContainers: only('row:') });
 };
@@ -41,7 +49,10 @@ export type Drop =
    | { kind: 'swap'; rowId: string }
    | { kind: 'move'; rowId: string; position: 'before' | 'after' };
 
-export function resolveDrop(event: DragOverEvent | DragEndEvent, rows: Row[]): Drop | null {
+export function resolveDrop(
+   event: DragMoveEvent | DragOverEvent | DragEndEvent,
+   rows: Row[],
+): Drop | null {
    const { active, over } = event;
    if (!over) return null;
 
@@ -69,6 +80,15 @@ export function resolveDrop(event: DragOverEvent | DragEndEvent, rows: Row[]): D
    const center = translated ? translated.top + translated.height / 2 : over.rect.top;
    const position = center < over.rect.top + over.rect.height / 2 ? 'before' : 'after';
    return { kind: 'move', rowId, position };
+}
+
+// 두 결과가 같은지. 끄는 동안 같은 결과로 다시 그리지 않기 위해 쓴다.
+export function isSameDrop(a: Drop | null, b: Drop | null): boolean {
+   if (a === b) return true;
+   if (!a || !b || a.kind !== b.kind || a.rowId !== b.rowId) return false;
+   if (a.kind === 'pair' && b.kind === 'pair') return a.status === b.status;
+   if (a.kind === 'move' && b.kind === 'move') return a.position === b.position;
+   return true;
 }
 
 // 끄는 동안 줄 사이에 보여 줄 주황 선의 위치. 실제로 들어갈 자리(헤더 앞, 푸터 뒤는 안 됨)를 기준으로 한다.

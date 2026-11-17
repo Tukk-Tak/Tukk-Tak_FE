@@ -76,7 +76,7 @@ export function EditorPanel({ tab, onTabChange }: EditorPanelProps) {
                {value === 'element' ? (
                   <ElementTab />
                ) : value === 'structure' ? (
-                  <StructureTab />
+                  <StructureTab active={tab === 'structure'} />
                ) : (
                   // 탭 본문이 길면 이 안에서만 스크롤된다. 여백(p-6)은 끝까지 스크롤했을 때 사라지지 않게 안쪽에 둔다.
                   <ScrollArea className="h-full" contentClassName="p-6">

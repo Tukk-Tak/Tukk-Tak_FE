@@ -8,17 +8,24 @@ import {
    useSensor,
    useSensors,
    type DragEndEvent,
+   type DragMoveEvent,
    type DragOverEvent,
    type DragStartEvent,
 } from '@dnd-kit/core';
 import { Plus } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { BLOCK_TYPE_LABEL, getVariantLabel, type BlockType } from '@/entities/block';
 import { useEditorSelection } from '@/features/editor-selection';
 import { findSection, useEditorSite } from '@/features/editor-site';
 import { ScrollArea } from '@/shared/ui/ScrollArea';
 import { AddBlockSheet } from './AddBlockSheet';
-import { collisionDetection, getInsertionHint, resolveDrop, type Drop } from './dropResolution';
+import {
+   collisionDetection,
+   getInsertionHint,
+   isSameDrop,
+   resolveDrop,
+   type Drop,
+} from './dropResolution';
 import { StructureRows } from './StructureRows';
 
 // 캔버스에서 해당 블록이 보이도록 스크롤한다. 목록에서 누르거나 블록을 새로 추가한 직후에 쓴다.
@@ -35,7 +42,12 @@ function scrollBlockIntoView(sectionId: string) {
 // - 줄 사이로 끌면 그 자리로 옮겨진다. (헤더는 맨 위, 푸터는 맨 아래에 고정이라 끌 수 없고 그 밖으로도 갈 수 없다)
 // - 반폭 가능한 블록끼리는 줄 오른쪽의 "옆에 놓기" 자리에 놓아 나란히 만든다.
 // - 나란히 놓인 줄 안에서 한 블록을 다른 블록 위에 놓으면 좌우가 바뀐다.
-export function StructureTab() {
+interface StructureTabProps {
+   // 지금 이 탭이 열려 있는지. 다른 탭으로 옮겨 가면 블록 추가 시트를 닫는다.
+   active: boolean;
+}
+
+export function StructureTab({ active }: StructureTabProps) {
    const rows = useEditorSite((state) => state.site.rows);
    const addSection = useEditorSite((state) => state.addSection);
    const removeSection = useEditorSite((state) => state.removeSection);
@@ -47,6 +59,11 @@ export function StructureTab() {
 
    const [sheetOpen, setSheetOpen] = useState(false);
    const addButtonRef = useRef<HTMLButtonElement>(null);
+
+   // 다른 탭으로 옮겨 가면 시트를 닫는다. 시트는 화면 전체 위에 띄워서, 이 탭이 숨겨져도 따라서 숨겨지지 않는다.
+   useEffect(() => {
+      if (!active) setSheetOpen(false);
+   }, [active]);
    const [activeId, setActiveId] = useState<string | null>(null);
    const [drop, setDrop] = useState<Drop | null>(null);
 
@@ -78,7 +95,12 @@ export function StructureTab() {
       setActiveId(sectionIdOf(event.active.id));
    };
 
-   const handleDragOver = (event: DragOverEvent) => setDrop(resolveDrop(event, rows));
+   // 같은 대상 위에서 움직일 때도(예: 줄의 위쪽 절반에서 아래쪽 절반으로) 놓일 자리가 바뀌므로 움직일 때마다 다시 계산한다.
+   // onDragOver는 대상이 바뀔 때만 불려서, 이것만으로는 표시와 실제 놓이는 자리가 어긋날 수 있다.
+   const updateDrop = (event: DragMoveEvent | DragOverEvent) => {
+      const next = resolveDrop(event, rows);
+      setDrop((current) => (isSameDrop(current, next) ? current : next));
+   };
 
    const handleDragEnd = (event: DragEndEvent) => {
       const result = resolveDrop(event, rows);
@@ -144,7 +166,8 @@ export function StructureTab() {
                sensors={sensors}
                collisionDetection={collisionDetection}
                onDragStart={handleDragStart}
-               onDragOver={handleDragOver}
+               onDragOver={updateDrop}
+               onDragMove={updateDrop}
                onDragEnd={handleDragEnd}
                onDragCancel={resetDrag}
                accessibility={{
@@ -192,7 +215,7 @@ export function StructureTab() {
             </button>
          </ScrollArea>
 
-         {sheetOpen && (
+         {sheetOpen && active && (
             <AddBlockSheet
                existingTypes={existingTypes}
                onAdd={handleAdd}
