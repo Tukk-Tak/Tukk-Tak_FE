@@ -1,0 +1,86 @@
+# 매일 오전 10시, 오후 10시(한국 시간)에 main → deploy 배포 PR을 자동으로 올린다.
+# - 머지는 하지 않는다. PR이 올라오면 CI(lint, format)를 확인하고 직접 머지한다. 머지되면 deploy.yml 이 배포한다.
+# - 배포할 변경(deploy에 없는 main의 커밋)이 없거나, 이미 열린 배포 PR이 있으면 아무것도 하지 않는다.
+# - PAT(DEPLOY_PR_TOKEN)로 PR을 만든다. 기본 토큰(GITHUB_TOKEN)으로 만든 PR은 ci.yml 을 실행시키지 않기 때문이다.
+# - 스케줄 워크플로는 기본 브랜치(main)에 있는 파일만 실행된다. 이 파일이 main에 머지되어야 동작한다.
+
+name: Daily Deploy PR
+
+on:
+   schedule:
+      # cron은 UTC 기준이다. 한국 시간 10:00 = UTC 01:00, 한국 시간 22:00 = UTC 13:00
+      # (정각에는 GitHub 서버가 몰려 늦게 돌 수 있어 몇 분 늦춰 둔다.)
+      - cron: '7 1,13 * * *'
+   # Actions 탭에서 수동으로 실행할 수도 있다.
+   workflow_dispatch:
+
+permissions:
+   contents: read
+
+# 같은 워크플로가 겹쳐 돌아 PR이 두 번 만들어지는 것을 막는다.
+concurrency:
+   group: daily-deploy-pr
+   cancel-in-progress: false
+
+jobs:
+   create-pr:
+      runs-on: ubuntu-latest
+      steps:
+         - name: Checkout Source Code
+           uses: actions/checkout@v4
+           with:
+              fetch-depth: 0
+
+         - name: Create deploy PR (main → deploy)
+           env:
+              # 저장소 Settings > Secrets and variables > Actions 에 등록한 PAT (repo 권한)
+              GH_TOKEN: ${{ secrets.DEPLOY_PR_TOKEN }}
+           run: |
+              set -euo pipefail
+
+              if [ -z "${GH_TOKEN:-}" ]; then
+                echo "::error::DEPLOY_PR_TOKEN 시크릿이 없어요. 저장소 Secrets에 PAT를 등록해주세요."
+                exit 1
+              fi
+
+              if ! git ls-remote --exit-code --heads origin deploy > /dev/null; then
+                echo "::error::deploy 브랜치가 없어요."
+                exit 1
+              fi
+
+              AHEAD=$(git rev-list --count origin/deploy..origin/main)
+              if [ "$AHEAD" = "0" ]; then
+                echo "배포할 변경이 없어요. PR을 만들지 않아요."
+                exit 0
+              fi
+
+              OPEN_PR=$(gh pr list --base deploy --head main --state open --json number --jq '.[0].number // empty')
+              if [ -n "$OPEN_PR" ]; then
+                echo "이미 열린 배포 PR(#$OPEN_PR)이 있어요. 새로 만들지 않아요."
+                exit 0
+              fi
+
+              NOW=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')
+              {
+                echo "## 📌 PR 요약"
+                echo
+                echo "main의 변경 ${AHEAD}개를 deploy에 반영합니다. (자동 생성: ${NOW} KST)"
+                echo
+                echo "## 🛠️ 작업 상세 내용"
+                echo
+                echo "- [x] UPDATE MAIN(DEPLOY)"
+                echo
+                echo "## 📋 포함된 변경"
+                echo
+                git log --pretty='- %s (%an)' --max-count=50 origin/deploy..origin/main
+                echo
+                echo "## 💬 메모"
+                echo
+                echo "- 머지하면 deploy.yml 이 Docker 빌드와 EC2 배포를 실행합니다. CI 결과를 확인한 뒤 머지해주세요."
+              } > pr-body.md
+
+              gh pr create \
+                --base deploy \
+                --head main \
+                --title "[DEPLOY] ${NOW} 배포" \
+                --body-file pr-body.md
