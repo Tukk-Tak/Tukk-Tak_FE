@@ -20,8 +20,7 @@ import {
 } from '../model/validation';
 import { PhotoField } from './PhotoField';
 
-// 등록을 마치거나 취소하면 돌아가는 곳.
-// TODO: 글 상세 페이지(/community/[postId])가 만들어지면, 등록 후에는 방금 쓴 글의 상세로 이동하도록 바꾼다.
+// 취소하면 돌아가는 곳. (등록에 성공했는데 서버가 새 글의 id를 주지 않은 경우에도 여기로 간다.)
 const COMMUNITY_PATH = '/community';
 
 function Counter({ length, max }: { length: number; max: number }) {
@@ -49,7 +48,11 @@ export function WritePostForm() {
       if (!result?.ok) return;
 
       toast.show('글을 등록했어요', { tone: 'success' });
-      router.push(COMMUNITY_PATH);
+      // 등록한 글을 바로 보여 준다. 서버가 새 글의 id를 아직 주지 않으면 목록으로 간다.
+      // TODO: 백엔드가 등록 응답(data)에 글 id(postId)를 돌려주면 항상 상세로 이동한다.
+      router.push(
+         result.id ? `${COMMUNITY_PATH}/${encodeURIComponent(result.id)}` : COMMUNITY_PATH,
+      );
    };
 
    // 쓰던 내용이 있으면 한 번 더 확인하고, 없으면 바로 나간다.
@@ -118,10 +121,12 @@ export function WritePostForm() {
                </FieldMessage>
             )}
 
-            {/* 등록 버튼이 왜 잠겨 있는지 버튼 가까이에서도 알려 준다. (사진이 위쪽에 있어 스크롤하면 안 보일 수 있다.) */}
-            {post.photo.uploading && (
+            {/* 글과 사진을 보내는 동안 진행률을 알려 준다. (사진이 커서 오래 걸릴 수 있다.) */}
+            {post.submitting && post.progress > 0 && (
                <p role="status" className="mt-4 text-right text-xs text-black/50">
-                  사진을 올리는 중이에요. 끝나면 등록할 수 있어요.
+                  {post.progress < 100
+                     ? `글과 사진을 보내는 중이에요 (${post.progress}%)`
+                     : '서버에서 등록하는 중이에요'}
                </p>
             )}
 
