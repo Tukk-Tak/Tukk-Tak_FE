@@ -10,6 +10,8 @@ interface OtpInputProps {
    length?: number;
    invalid?: boolean;
    disabled?: boolean;
+   // 오류 설명 요소의 id(여러 개면 공백으로 이어 쓴다). 각 칸에 연결해서, 스크린 리더가 칸으로 돌아왔을 때 오류 이유를 알려 준다.
+   describedBy?: string;
 }
 
 // 숫자 한 칸씩 입력하는 인증번호 칸. value는 앞에서부터 빈틈없이 채워진 숫자 문자열이다.
@@ -21,6 +23,7 @@ export function OtpInput({
    length = 6,
    invalid = false,
    disabled = false,
+   describedBy,
 }: OtpInputProps) {
    const inputs = useRef<Array<HTMLInputElement | null>>([]);
    const pendingFocus = useRef<number | null>(null);
@@ -118,6 +121,7 @@ export function OtpInput({
                disabled={disabled}
                aria-label={`${label} ${index + 1}번째 자리`}
                aria-invalid={invalid || undefined}
+               aria-describedby={describedBy}
                onChange={(event) => handleChange(index, event.target.value)}
                onKeyDown={(event) => handleKeyDown(index, event)}
                onPaste={handlePaste}

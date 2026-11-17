@@ -1,6 +1,5 @@
-import { ArrowRight } from 'lucide-react';
-import { Button } from '@/shared/ui/Button';
 import { HeroPreviewCard } from './HeroPreviewCard';
+import { StartWithAiButton } from './StartWithAiButton';
 
 export function HomeHero() {
    return (
@@ -18,11 +17,7 @@ export function HomeHero() {
                <br />
                분위기와 색상만 골라주시면 나머지는 저희가 뚝딱 만들어드립니다.
             </p>
-            {/* 연결할 동작이 정해지기 전까지는 모양만 둔다. */}
-            <Button size="lg" className="mt-10">
-               AI로 초안 만들기
-               <ArrowRight className="size-4" />
-            </Button>
+            <StartWithAiButton />
          </div>
          <HeroPreviewCard />
       </section>

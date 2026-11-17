@@ -3,6 +3,6 @@ export interface CreatePostPayload {
    content: string;
    // '#' 없이 보관한다.
    tags: string[];
-   // 서버에 먼저 올린 사진의 id. (파일 자체는 업로드 단계에서 따로 올린다.)
-   photoId: string;
+   // 대표 사진 파일. 글과 함께 한 번의 요청(multipart)으로 보낸다.
+   image: File;
 }

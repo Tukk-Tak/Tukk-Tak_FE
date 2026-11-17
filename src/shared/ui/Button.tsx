@@ -21,7 +21,7 @@ const SIZE_CLASS: Record<ButtonSize, string> = {
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
    solid: 'bg-brand-orange not-disabled:hover:bg-brand-orange-hover disabled:bg-brand-line font-bold text-white',
    outline:
-      'border border-brand-line bg-white font-medium text-black not-disabled:hover:bg-brand-orange-light/40 disabled:bg-field-disabled disabled:text-black/30',
+      'border border-brand-line bg-white font-medium text-black not-disabled:hover:bg-brand-orange-light/40 hover:border-brand-orange disabled:bg-field-disabled disabled:text-black/30',
 };
 
 export function buttonClassName(

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { signIn } from '@/entities/user/model/sessionStore';
 import { useGuestOnly } from '@/entities/user/model/useGuestOnly';
+import { FIND_PASSWORD_PATH } from '@/shared/config/routes';
 import { useGoogleAuthStart } from '@/shared/lib/useGoogleAuthStart';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
@@ -148,7 +149,7 @@ export function LoginForm({ googleError }: LoginFormProps) {
          {shownGoogleError && <GoogleAuthErrorMessage error={shownGoogleError} />}
 
          <Link
-            href="/find-password"
+            href={FIND_PASSWORD_PATH}
             className="mt-8 inline-block cursor-pointer text-xs font-bold text-brand-orange hover:underline underline-offset-4"
          >
             비밀번호를 잊으셨나요?
