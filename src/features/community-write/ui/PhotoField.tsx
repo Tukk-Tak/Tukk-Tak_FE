@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, TriangleAlert, Upload } from 'lucide-react';
+import { TriangleAlert, Upload } from 'lucide-react';
 import { useId, useRef, useState, type ChangeEvent, type DragEvent, type ReactNode } from 'react';
 import { formatFileSize } from '@/shared/lib/formatFileSize';
 import { Button } from '@/shared/ui/Button';
@@ -15,7 +15,7 @@ interface PhotoFieldProps {
 
 const MAX_MB = PHOTO_MAX_BYTES / (1024 * 1024);
 
-// 사진을 올릴 수 없을 때 보여 주는 경고 영역. (형식·용량 오류와 업로드 실패가 같은 모양을 쓴다.)
+// 사진을 올릴 수 없을 때 보여 주는 경고 영역. (형식·용량 오류)
 function PhotoProblem({
    title,
    detail,
@@ -38,9 +38,9 @@ function PhotoProblem({
    );
 }
 
-// 대표 사진 한 장을 올리는 영역. 상태는 다음과 같다.
-// 비어 있음 → (고르면 바로 업로드) 올리는 중(진행률, 취소 가능) → 올림(교체·삭제 가능)
-// 올릴 수 없는 파일(형식·용량)과 업로드 실패(네트워크 등)는 경고로 보여 주고, 실패는 같은 파일로 다시 시도할 수 있다.
+// 대표 사진 한 장을 고르는 영역. 상태는 다음과 같다.
+// 비어 있음 → 선택함(미리보기, 교체·삭제 가능). 올릴 수 없는 파일(형식·용량)은 경고로 보여 준다.
+// 사진은 고르는 즉시 올라가지 않고, 글을 등록할 때 글과 함께 한 번에 올라간다.
 // 영역을 누르거나 파일을 끌어다 놓아서 고를 수 있다.
 export function PhotoField({ photo, disabled }: PhotoFieldProps) {
    const inputId = useId();
@@ -102,18 +102,6 @@ export function PhotoField({ photo, disabled }: PhotoFieldProps) {
                      다른 사진 선택
                   </Button>
                </PhotoProblem>
-            ) : photo.upload.status === 'failed' ? (
-               <PhotoProblem
-                  title="사진을 올리지 못했어요."
-                  detail={photo.upload.message ?? '잠시 후 다시 시도해주세요'}
-               >
-                  <Button size="field" disabled={disabled} onClick={photo.retry}>
-                     다시 시도
-                  </Button>
-                  <Button variant="outline" size="field" disabled={disabled} onClick={openPicker}>
-                     다른 사진 선택
-                  </Button>
-               </PhotoProblem>
             ) : photo.previewUrl ? (
                <div className="flex flex-col gap-4 rounded-xl border border-brand-line p-4 sm:flex-row sm:items-center">
                   {/* 내 컴퓨터의 파일을 가리키는 임시 주소(blob)라 next/image를 쓰지 않는다. */}
@@ -121,63 +109,33 @@ export function PhotoField({ photo, disabled }: PhotoFieldProps) {
                   <img
                      src={photo.previewUrl}
                      alt="선택한 대표 사진 미리보기"
-                     className={`aspect-3/2 w-full rounded-lg object-cover transition-opacity sm:w-48 ${
-                        photo.uploading ? 'opacity-60' : ''
-                     }`}
+                     className="aspect-3/2 w-full rounded-lg object-cover sm:w-48"
                   />
-                  {photo.uploading ? (
-                     <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-black">사진을 올리고 있어요</p>
-                        <div
-                           role="progressbar"
-                           aria-label="사진 업로드 진행률"
-                           aria-valuemin={0}
-                           aria-valuemax={100}
-                           aria-valuenow={photo.upload.progress}
-                           className="mt-3 h-1.5 w-full max-w-64 overflow-hidden rounded-full bg-field-readonly"
+                  <div className="min-w-0">
+                     <p className="text-xs font-bold text-black">대표 사진</p>
+                     <p className="mt-1 text-xs text-black/50">제목 아래 가장 위에 보여요.</p>
+                     <p className="mt-1 truncate text-xs text-black/40">
+                        {photo.file?.name} · {photo.file ? formatFileSize(photo.file.size) : ''}
+                     </p>
+                     <div className="mt-3 flex items-center gap-3">
+                        <Button
+                           variant="outline"
+                           size="field"
+                           disabled={disabled}
+                           onClick={openPicker}
                         >
-                           <div
-                              className="h-full rounded-full bg-brand-orange transition-[width]"
-                              style={{ width: `${photo.upload.progress}%` }}
-                           />
-                        </div>
-                        <p className="mt-1.5 text-xs text-black/50">{photo.upload.progress}%</p>
+                           사진 교체
+                        </Button>
                         <button
                            type="button"
+                           disabled={disabled}
                            onClick={photo.remove}
-                           className="mt-3 cursor-pointer text-sm text-black/40 hover:text-black hover:underline"
+                           className="cursor-pointer text-sm text-black/40 hover:text-black hover:underline disabled:cursor-not-allowed"
                         >
-                           올리기 취소
+                           사진 삭제
                         </button>
                      </div>
-                  ) : (
-                     <div>
-                        <p className="text-xs font-bold text-black">대표 사진</p>
-                        <p className="mt-1 text-xs text-black/50">제목 아래 가장 위에 보여요.</p>
-                        <p className="mt-1 flex items-center gap-1 text-xs text-state-success">
-                           <Check aria-hidden className="size-3.5" />
-                           업로드 완료
-                        </p>
-                        <div className="mt-3 flex items-center gap-3">
-                           <Button
-                              variant="outline"
-                              size="field"
-                              disabled={disabled}
-                              onClick={openPicker}
-                           >
-                              사진 교체
-                           </Button>
-                           <button
-                              type="button"
-                              disabled={disabled}
-                              onClick={photo.remove}
-                              className="cursor-pointer text-sm text-black/40 hover:text-black hover:underline disabled:cursor-not-allowed"
-                           >
-                              사진 삭제
-                           </button>
-                        </div>
-                     </div>
-                  )}
+                  </div>
                </div>
             ) : (
                <button
