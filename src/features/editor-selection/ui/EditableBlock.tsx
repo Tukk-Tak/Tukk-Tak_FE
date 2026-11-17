@@ -19,15 +19,14 @@ interface EditableBlockProps {
 export function EditableBlock({ section, order, children }: EditableBlockProps) {
    const selection = useOptionalEditorSelection();
    const enabled = selection?.enabled ?? false;
-   const selected = enabled && selection?.selected?.id === section.id;
+   const selected = enabled && selection?.selectedId === section.id;
    const label = BLOCK_TYPE_LABEL[section.type];
 
    // 안쪽 제목은 inert로 가려져 읽히지 않으므로, 블록을 구별할 정보(순서, 종류, 구조)를 이름에 담는다.
    // 선택 여부는 aria-pressed가 알리므로 이름에는 넣지 않는다.
    const accessibleName = `${order}번째 ${label}(${getVariantLabel(section.type, section.variant)}) 블록`;
 
-   const select = () =>
-      selection?.toggle({ id: section.id, type: section.type, variant: section.variant });
+   const select = () => selection?.toggle(section.id);
 
    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
       // 안쪽 요소가 아니라 틀 자체에 포커스가 있을 때만 반응한다.
@@ -41,6 +40,7 @@ export function EditableBlock({ section, order, children }: EditableBlockProps) 
    return (
       <div
          data-editable-block
+         data-block-id={section.id}
          role={enabled ? 'button' : undefined}
          tabIndex={enabled ? 0 : undefined}
          aria-pressed={enabled ? selected : undefined}

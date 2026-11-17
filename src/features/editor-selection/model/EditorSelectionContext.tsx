@@ -1,22 +1,16 @@
 'use client';
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { Section } from '@/entities/block';
-
-// 선택한 블록을 가리키는 값. 블록의 내용 전체가 아니라 무엇을 골랐는지만 담는다.
-// TODO: 에디터 상태 저장소(사이트 내용)가 생기면 id만 들고 있고 나머지는 저장소에서 읽는다. (구조를 바꿔도 이 값이 낡지 않게)
-export interface SelectedBlock {
-   id: string;
-   type: Section['type'];
-   variant: string;
-}
 
 interface EditorSelectionContextValue {
    // 편집 모드인지. 미리보기에서는 블록 라벨과 선택 표시가 사라지고 선택할 수 없다.
    enabled: boolean;
-   selected: SelectedBlock | null;
+   // 선택한 블록의 id. 블록의 종류와 구조는 사이트 내용 저장소에서 id로 찾는다.
+   selectedId: string | null;
    // 같은 블록을 다시 누르면 선택이 해제된다.
-   toggle: (block: SelectedBlock) => void;
+   toggle: (id: string) => void;
+   // 해제하지 않고 항상 선택한다. (목록에서 누르거나 블록을 새로 추가했을 때)
+   select: (id: string) => void;
    clear: () => void;
 }
 
@@ -25,29 +19,32 @@ const EditorSelectionContext = createContext<EditorSelectionContextValue | null>
 interface EditorSelectionProviderProps {
    enabled: boolean;
    // 블록을 새로 선택했을 때 부른다. (해제할 때는 부르지 않는다.) 오른쪽 패널을 요소 편집 탭으로 옮기는 데 쓴다.
-   onSelect?: (block: SelectedBlock) => void;
+   onSelect?: (id: string) => void;
    children: ReactNode;
 }
 
-// 에디터에서 선택한 블록 하나를 들고 있는다. 캔버스(블록 클릭)와 오른쪽 패널(선택 정보)이 함께 읽는다.
+// 에디터에서 선택한 블록 하나를 들고 있는다. 캔버스(블록 클릭)와 오른쪽 패널(선택 정보, 섹션 구조 목록)이 함께 읽는다.
 export function EditorSelectionProvider({
    enabled,
    onSelect,
    children,
 }: EditorSelectionProviderProps) {
-   const [selected, setSelected] = useState<SelectedBlock | null>(null);
+   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-   const toggle = (block: SelectedBlock) => {
-      if (selected?.id === block.id) {
-         setSelected(null);
-         return;
-      }
-      setSelected(block);
-      onSelect?.(block);
+   const select = (id: string) => {
+      setSelectedId(id);
+      onSelect?.(id);
+   };
+
+   const toggle = (id: string) => {
+      if (selectedId === id) setSelectedId(null);
+      else select(id);
    };
 
    return (
-      <EditorSelectionContext value={{ enabled, selected, toggle, clear: () => setSelected(null) }}>
+      <EditorSelectionContext
+         value={{ enabled, selectedId, toggle, select, clear: () => setSelectedId(null) }}
+      >
          {children}
       </EditorSelectionContext>
    );

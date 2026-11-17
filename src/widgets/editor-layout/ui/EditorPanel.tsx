@@ -3,6 +3,7 @@
 import { useRef, type KeyboardEvent } from 'react';
 import { ScrollArea } from '@/shared/ui/ScrollArea';
 import { ElementTab } from './ElementTab';
+import { StructureTab } from './structure/StructureTab';
 import type { PanelTab } from '../types';
 
 const TABS: { value: PanelTab; label: string }[] = [
@@ -37,7 +38,7 @@ export function EditorPanel({ tab, onTabChange }: EditorPanelProps) {
    };
 
    return (
-      <aside className="flex w-[370px] shrink-0 flex-col border-l border-brand-line bg-white">
+      <aside className="flex w-92.5 shrink-0 flex-col border-l border-brand-line bg-white">
          <div role="tablist" aria-label="에디터 패널" className="flex border-b border-brand-line">
             {TABS.map(({ value, label }, index) => (
                <button
@@ -53,10 +54,10 @@ export function EditorPanel({ tab, onTabChange }: EditorPanelProps) {
                   tabIndex={tab === value ? 0 : -1}
                   onClick={() => onTabChange(value)}
                   onKeyDown={(event) => handleKeyDown(event, index)}
-                  className={`-mb-px flex-1 cursor-pointer border-b-2 py-4 text-sm font-medium transition-colors ${
+                  className={`-mb-px flex-1 cursor-pointer border-b-2 py-4 text-sm transition-colors ${
                      tab === value
-                        ? 'border-brand-orange text-black'
-                        : 'border-transparent text-black/40 hover:text-black/70'
+                        ? 'border-brand-orange font-bold text-brand-brown'
+                        : 'border-transparent font-medium text-[#A6A09B] hover:text-black/70'
                   }`}
                >
                   {label}
@@ -74,6 +75,8 @@ export function EditorPanel({ tab, onTabChange }: EditorPanelProps) {
             >
                {value === 'element' ? (
                   <ElementTab />
+               ) : value === 'structure' ? (
+                  <StructureTab />
                ) : (
                   // 탭 본문이 길면 이 안에서만 스크롤된다. 여백(p-6)은 끝까지 스크롤했을 때 사라지지 않게 안쪽에 둔다.
                   <ScrollArea className="h-full" contentClassName="p-6">

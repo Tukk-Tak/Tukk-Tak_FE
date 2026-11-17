@@ -1,6 +1,2 @@
-export {
-   EditorSelectionProvider,
-   useEditorSelection,
-   type SelectedBlock,
-} from './model/EditorSelectionContext';
+export { EditorSelectionProvider, useEditorSelection } from './model/EditorSelectionContext';
 export { EditableBlock } from './ui/EditableBlock';
