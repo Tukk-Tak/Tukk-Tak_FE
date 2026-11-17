@@ -207,7 +207,7 @@ export function StructureRows({
             if (row.sections.length === 2) {
                return (
                   <RowBlock key={row.id} row={row} hint={hint}>
-                     <div className="my-1 rounded-xl bg-[#FBF0E4] px-2 py-2">
+                     <div className="my-1 rounded-xl bg-brand-orange-light px-2 py-2">
                         <div className="flex items-center justify-between px-2 pb-1">
                            <span className="text-[11px] text-[#79716B]">나란히 (50:50)</span>
                            {!dragging && (

@@ -43,9 +43,7 @@ interface Position {
 
 function Tag({ half }: { half: boolean }) {
    return (
-      <span
-         className="inline-block rounded px-1.5 py-0.5 text-[11px] bg-field-disabled text-[#79716B]"
-      >
+      <span className="inline-block rounded px-1.5 py-0.5 text-[11px] bg-field-disabled text-[#79716B]">
          {half ? '반폭 가능' : '전체 폭 전용'}
       </span>
    );

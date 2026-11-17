@@ -171,7 +171,7 @@ export function StructureTab() {
                         <span className="text-sm font-bold text-brand-brown">
                            {BLOCK_TYPE_LABEL[activeSection.type]}
                         </span>
-                        <span className="rounded bg-[#F5F5F4] px-1.5 py-0.5 text-[11px] text-[#79716B]">
+                        <span className="rounded bg-field-disabled px-1.5 py-0.5 text-[11px] text-[#79716B]">
                            {getVariantLabel(activeSection.type, activeSection.variant)}
                         </span>
                      </div>
