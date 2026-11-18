@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { EditorHeader, type EditorMode } from '@/features/editor-header';
 import { EditorSelectionProvider } from '@/features/editor-selection';
+import { useEditorSite } from '@/features/editor-site';
 import type { DeviceKind, PanelTab } from '../types';
 import { EditorCanvas } from './EditorCanvas';
 import { EditorPanel } from './EditorPanel';
@@ -18,8 +19,8 @@ export function EditorLayout({ siteName, children }: EditorLayoutProps) {
    const [mode, setMode] = useState<EditorMode>('edit');
    const [device, setDevice] = useState<DeviceKind>('pc');
    const [tab, setTab] = useState<PanelTab>('structure');
-   // TODO: 편집 기능이 생기면 실제 변경 여부로 바꾼다. 지금은 화면 확인용 고정값이다.
-   const isDirty = true;
+   // 처음 불러온 내용에서 한 번이라도 바뀌었으면 저장하지 않은 변경이 있는 것이다. (되돌려서 같아져도 변경으로 본다)
+   const isDirty = useEditorSite((state) => state.site !== state.initialSite);
 
    return (
       // 블록을 선택하면 오른쪽 패널을 요소 편집 탭으로 옮긴다. 미리보기에서는 선택 기능을 끈다.
