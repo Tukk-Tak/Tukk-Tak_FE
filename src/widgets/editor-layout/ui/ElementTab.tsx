@@ -1,13 +1,25 @@
 'use client';
 
+import { useMemo } from 'react';
 import { BLOCK_TYPE_LABEL, getVariantLabel } from '@/entities/block';
 import { useEditorSelection } from '@/features/editor-selection';
+import { useEditorSite } from '@/features/editor-site';
 import { ScrollArea } from '@/shared/ui/ScrollArea';
 
 // "요소 편집" 탭. 위쪽에 선택한 블록의 종류와 구조를 보여 주고, 선택을 해제하는 버튼을 둔다.
 // TODO: 구조 선택과 블록별 편집 항목(#33)은 이 아래 본문에 만든다. 지금은 선택 정보만 있다.
 export function ElementTab() {
-   const { selected, clear } = useEditorSelection();
+   const { selectedId, clear } = useEditorSelection();
+   const rows = useEditorSite((state) => state.site.rows);
+   // 선택한 블록이 지워졌거나 찾을 수 없으면 선택하지 않은 것으로 본다.
+   const selected = useMemo(
+      () =>
+         selectedId
+            ? (rows.flatMap((row) => row.sections).find((section) => section.id === selectedId) ??
+              null)
+            : null,
+      [rows, selectedId],
+   );
 
    return (
       <div className="flex h-full flex-col">
