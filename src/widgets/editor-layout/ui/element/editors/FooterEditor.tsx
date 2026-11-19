@@ -47,8 +47,8 @@ function SocialLinksField({
          <FieldLabel htmlFor={`${id}-0`} label="SNS 링크" optional />
          {/* 편집 화면의 캔버스에서는 푸터가 이름만 보여서 링크인 줄 알아채기 어렵다. 어떻게 보이고 동작하는지 먼저 알려 준다. */}
          <p className="mb-2.5 text-[11px] leading-relaxed break-keep text-[#A6A09B]">
-            주소를 넣으면 주소 대신 Instagram, 블로그 같은 이름으로 보여요. 클릭하면
-            입력한 주소로 이동하니, 미리보기 모드에서 확인 가능해요.
+            주소를 넣으면 주소 대신 Instagram, 블로그 같은 이름으로 보여요. 클릭하면 입력한 주소로
+            이동하니, 미리보기 모드에서 확인 가능해요.
          </p>
          <div className="space-y-2">
             {social.map((link, index) => {
