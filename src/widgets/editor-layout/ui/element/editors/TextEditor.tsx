@@ -68,7 +68,8 @@ export function TextEditor({ section }: { section: TextSection }) {
                         aria-pressed={selected}
                         aria-label={label}
                         title={label}
-                        onClick={() => updateContent(section.id, { align: value })}
+                        // 이미 선택된 정렬(값이 없으면 왼쪽)을 다시 눌러도 바뀐 것이 없으므로 저장하지 않는다.
+                        onClick={() => selected || updateContent(section.id, { align: value })}
                         className={`flex size-10 cursor-pointer items-center justify-center rounded-lg border transition-colors ${
                            selected
                               ? 'border-brand-brown bg-brand-brown text-white'

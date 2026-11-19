@@ -174,7 +174,19 @@ export function GalleryEditor({ section }: { section: GallerySection }) {
 
    const limit = BLOCK_LIMITS.galleryImageCount;
    const full = images.length >= limit;
-   const ids = images.map((_, index) => `photo-${index}`);
+   // 사진마다 정해진 고유 id. 사진 값에는 id가 없어서 이 화면에서 따로 들고 있는다.
+   // 배열 순서(인덱스)를 id로 쓰면 순서를 바꾼 뒤에도 같은 자리의 핸들에 포커스가 남아서, 키보드로 이어서 옮길 때 다른 사진이 움직인다.
+   // 순서를 바꾸거나 지우거나 추가할 때 id도 사진과 함께 옮긴다. 사진 수가 밖에서 바뀌어 어긋나면 모자란 자리는 임시 id로 채운다.
+   const idPrefix = useId();
+   const keySeq = useRef(0);
+   const [keys, setKeys] = useState<string[]>(() =>
+      images.map((_, index) => `${idPrefix}-init-${index}`),
+   );
+   const ids =
+      keys.length === images.length
+         ? keys
+         : images.map((_, index) => keys[index] ?? `${idPrefix}-extra-${index}`);
+   const newKey = () => `${idPrefix}-new-${keySeq.current++}`;
    const coverNotice = COVER_NOTICE[section.variant];
    const showCover = coverNotice !== undefined;
    const cover = images[0];
@@ -185,10 +197,17 @@ export function GalleryEditor({ section }: { section: GallerySection }) {
    );
 
    const setImages = (next: BlockImage[]) => updateContent(section.id, { images: next });
+   // 사진과 id를 함께 바꾼다. (순서 변경, 삭제, 추가)
+   const setImagesWithKeys = (nextImages: BlockImage[], nextKeys: string[]) => {
+      setKeys(nextKeys);
+      setImages(nextImages);
+   };
 
    const handleDragEnd = ({ active, over }: DragEndEvent) => {
       if (!over || active.id === over.id) return;
-      setImages(arrayMove(images, ids.indexOf(String(active.id)), ids.indexOf(String(over.id))));
+      const from = ids.indexOf(String(active.id));
+      const to = ids.indexOf(String(over.id));
+      setImagesWithKeys(arrayMove(images, from, to), arrayMove(ids, from, to));
    };
 
    // 여러 장을 올린다. 비어 있는 칸부터 채우고, 남는 것은 한도(12장)까지 뒤에 붙인다.
@@ -207,7 +226,11 @@ export function GalleryEditor({ section }: { section: GallerySection }) {
       const filled = images.map((image) =>
          !image.url && queue.length > 0 ? toBlockImage(queue.shift() as File) : image,
       );
-      setImages([...filled, ...queue.map((file) => toBlockImage(file))]);
+      // 비어 있던 칸을 채운 사진은 그 칸의 id를 그대로 쓰고, 뒤에 붙는 사진에만 새 id를 준다.
+      setImagesWithKeys(
+         [...filled, ...queue.map((file) => toBlockImage(file))],
+         [...ids, ...queue.map(() => newKey())],
+      );
    };
 
    // 비어 있는 한 칸에 사진 한 장을 넣는다.
@@ -281,7 +304,12 @@ export function GalleryEditor({ section }: { section: GallerySection }) {
                                     slotIndexRef.current = slot;
                                     slotInputRef.current?.click();
                                  }}
-                                 onRemove={(slot) => setImages(images.filter((_, i) => i !== slot))}
+                                 onRemove={(slot) =>
+                                    setImagesWithKeys(
+                                       images.filter((_, i) => i !== slot),
+                                       ids.filter((_, i) => i !== slot),
+                                    )
+                                 }
                               />
                            ))}
                         </ul>

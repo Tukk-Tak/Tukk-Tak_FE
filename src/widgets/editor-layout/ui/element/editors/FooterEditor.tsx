@@ -193,7 +193,7 @@ export function FooterEditor({ section }: { section: FooterSection }) {
                optional
                value={copyright}
                maxLength={BLOCK_LIMITS.footerCopyright}
-               hint="비워 두면 © 올해+헤더의 상호명으로 표시돼요."
+               hint="비워 두면 © 올해+푸터의 상호명으로 표시돼요."
                onChange={(value) => updateContent(section.id, { copyright: optional(value) })}
             />
          </EditorSection>

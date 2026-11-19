@@ -9,6 +9,8 @@ export function isAllowedImage(file: File): boolean {
 
 // 올린 파일로 블록 사진 값을 만든다. 지금은 브라우저의 임시 주소를 쓰므로 새로고침하면 사라진다.
 // TODO: 사진 업로드 API가 생기면 올린 뒤 받은 주소로 바꾸고, 쓰지 않는 임시 주소는 해제한다.
+// 지금은 사진을 바꾸거나 지워도 이전 임시 주소를 해제하지 않는다. 되돌리기·다시하기(예정)가 이전 사진을 다시 쓸 수 있어서
+// 해제하면 되돌렸을 때 사진이 깨지기 때문이다. 업로드 API로 바뀌면 임시 주소 자체가 사라진다.
 export function toBlockImage(file: File, scale?: number): BlockImage {
    return { url: URL.createObjectURL(file), scale };
 }

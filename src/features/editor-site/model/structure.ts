@@ -188,12 +188,18 @@ function updateSection(
 }
 
 // 블록 내용의 일부를 바꾼다. 패치에 없는 항목은 그대로 둔다.
+// 패치의 모든 값이 이미 같은 값이면(예: 이미 선택된 정렬 버튼을 다시 누름) 바뀐 것이 없으므로 기존 블록을 그대로 돌려준다.
+// (배열이나 객체 값은 새로 만든 것이라 항상 바뀐 것으로 본다)
 export function updateSectionContent(rows: Row[], sectionId: string, patch: ContentPatch): Row[] {
-   return updateSection(
-      rows,
-      sectionId,
-      (section) => ({ ...section, content: { ...section.content, ...patch } }) as Section,
-   );
+   return updateSection(rows, sectionId, (section) => {
+      const content = section.content as unknown as Record<string, unknown>;
+      const unchanged = Object.entries(patch).every(([key, value]) =>
+         Object.is(content[key], value),
+      );
+      return unchanged
+         ? section
+         : ({ ...section, content: { ...section.content, ...patch } } as Section);
+   });
 }
 
 // 블록의 구조(variant)를 바꾼다. 입력한 내용은 그대로 두고, 전체 폭 전용 구조로 바꾸면 나란히 놓인 상태를 푼다.
