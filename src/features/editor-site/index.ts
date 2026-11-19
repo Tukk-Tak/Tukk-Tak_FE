@@ -6,3 +6,4 @@ export {
    isPinnedType,
    type PairStatus,
 } from './model/structure';
+export type { ContentPatch } from './model/structure';

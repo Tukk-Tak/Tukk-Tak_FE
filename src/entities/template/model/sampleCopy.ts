@@ -29,3 +29,22 @@ export function sampleItems(count: number, withImage: boolean): ListItem[] {
 export function sampleImages(count: number) {
    return Array.from({ length: count }, () => ({ url: '' }));
 }
+
+// 값이 템플릿의 샘플 문구 그대로인지. 템플릿으로 시작한 사이트에서 고치지 않은 문구를 알려 주는 데 쓴다.
+const SAMPLE_TEXTS: ReadonlySet<string> = new Set(
+   Object.values(SAMPLE).filter((v) => typeof v === 'string'),
+);
+// 번호가 붙는 목록 샘플("메뉴 이름 1" 등)은 패턴으로 판단한다.
+const NUMBERED_SAMPLE = /^(메뉴 이름 \d+)$/;
+
+export function isTemplateSampleText(value: string | undefined): boolean {
+   if (value === undefined) return false;
+   const text = value.trim();
+   return (
+      SAMPLE_TEXTS.has(text) ||
+      NUMBERED_SAMPLE.test(text) ||
+      text === '메뉴 설명을 적어 주세요' ||
+      text === '0,000원' ||
+      SAMPLE.heroBadges.includes(text as (typeof SAMPLE.heroBadges)[number])
+   );
+}

@@ -1,4 +1,15 @@
-import { isHalfWidthCapable, type BlockType, type Section } from '@/entities/block';
+import {
+   getBlockVariants,
+   isHalfWidthCapable,
+   type BlockType,
+   type FooterContent,
+   type GalleryContent,
+   type HeaderContent,
+   type HeroContent,
+   type ListContent,
+   type Section,
+   type TextContent,
+} from '@/entities/block';
 import type { Row } from '@/entities/site';
 
 // 사이트의 줄(row) 구성을 바꾸는 순수 함수 모음. 새 배열을 돌려주고 받은 배열은 바꾸지 않는다.
@@ -145,4 +156,69 @@ export function unpairRow(rows: Row[], rowId: string, newRowId: string): Row[] {
          { id: newRowId, sections: [right] },
       ];
    });
+}
+
+// 블록 내용의 일부만 바꾸는 값. 어느 블록의 내용이든 담을 수 있게 모든 내용 타입을 합쳐 모든 항목을 선택으로 둔다.
+// (어느 블록에 어떤 항목을 넣는지는 편집 화면이 블록 종류에 맞게 정한다)
+export type ContentPatch = Partial<
+   HeaderContent & HeroContent & TextContent & ListContent & GalleryContent & FooterContent
+>;
+
+// 블록 한 개를 바꾼다. 바뀐 것이 없으면 받은 줄 배열을 그대로 돌려줘서 화면이 다시 그려지지 않게 한다.
+function updateSection(
+   rows: Row[],
+   sectionId: string,
+   update: (section: Section) => Section,
+): Row[] {
+   const found = findSection(rows, sectionId);
+   if (!found) return rows;
+   const next = update(found.section);
+   if (next === found.section) return rows;
+
+   return rows.map((row) =>
+      row.id !== found.row.id
+         ? row
+         : {
+              ...row,
+              sections: row.sections.map((section) =>
+                 section.id === sectionId ? next : section,
+              ) as Row['sections'],
+           },
+   );
+}
+
+// 블록 내용의 일부를 바꾼다. 패치에 없는 항목은 그대로 둔다.
+export function updateSectionContent(rows: Row[], sectionId: string, patch: ContentPatch): Row[] {
+   return updateSection(
+      rows,
+      sectionId,
+      (section) => ({ ...section, content: { ...section.content, ...patch } }) as Section,
+   );
+}
+
+// 블록의 구조(variant)를 바꾼다. 입력한 내용은 그대로 두고, 전체 폭 전용 구조로 바꾸면 나란히 놓인 상태를 푼다.
+// 나란히 풀 때 줄의 왼쪽 블록은 그 줄에 남고 오른쪽 블록은 바로 아래 새 줄이 되므로, 보이는 순서는 그대로이다.
+export function changeVariant(
+   rows: Row[],
+   sectionId: string,
+   variant: string,
+   newRowId: string,
+): { rows: Row[]; unpaired: boolean } {
+   const found = findSection(rows, sectionId);
+   if (!found || found.section.variant === variant) return { rows, unpaired: false };
+   // 그 블록 종류에 없는 구조는 받지 않는다.
+   if (!getBlockVariants(found.section.type).some((meta) => meta.value === variant)) {
+      return { rows, unpaired: false };
+   }
+
+   const changed = updateSection(
+      rows,
+      sectionId,
+      (section) => ({ ...section, variant }) as Section,
+   );
+   const mustUnpair =
+      found.row.sections.length === 2 && !isHalfWidthCapable(found.section.type, variant);
+   if (!mustUnpair) return { rows: changed, unpaired: false };
+
+   return { rows: unpairRow(changed, found.row.id, newRowId), unpaired: true };
 }

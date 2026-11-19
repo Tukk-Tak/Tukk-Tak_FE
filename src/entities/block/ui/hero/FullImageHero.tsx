@@ -9,9 +9,14 @@ import { HeroText } from './HeroText';
 // 배경이라 프레임을 꽉 채우는 cover를 쓰고(일부가 잘릴 수 있음), 글이 읽히도록 어두운 막을 덧씌운다.
 // 사진이 없거나 불러오지 못하면 모양(최소 높이, 가운데 정렬)은 그대로 두고 배경만 이미지 대체 화면으로 바꾼다.
 // 이때는 옅은 배경 위라 어두운 막과 흰 글자 대신 사이트 글자색을 쓴다.
+// 사진 크기(scale)는 프레임 크기를 바꾸지 않고, 프레임 안에서 사진을 가운데 기준으로 확대한다. (넘치는 부분은 잘린다)
 export function FullImageHero({ content }: { content: HeroContent }) {
    const { title, subtitle, image, badges } = content;
    const { failed, imgRef, onError } = useImageLoad(image?.url ?? '');
+   const scale =
+      image?.scale !== undefined && Number.isFinite(image.scale) && image.scale > 0
+         ? image.scale
+         : 1;
 
    return (
       <div className="relative flex min-h-70 items-center justify-center overflow-hidden rounded-site px-6 py-12 @2xl:min-h-90 @2xl:px-12">
@@ -29,6 +34,7 @@ export function FullImageHero({ content }: { content: HeroContent }) {
                   alt=""
                   onError={onError}
                   className="absolute inset-0 size-full object-cover"
+                  style={{ transform: `scale(${scale})` }}
                />
                <div aria-hidden className="absolute inset-0 bg-black/40" />
             </>
