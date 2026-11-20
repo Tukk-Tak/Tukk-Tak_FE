@@ -13,7 +13,7 @@ import {
    type DragStartEvent,
 } from '@dnd-kit/core';
 import { Plus } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { BLOCK_TYPE_LABEL, getVariantLabel, type BlockType } from '@/entities/block';
 import { useEditorSelection } from '@/features/editor-selection';
 import { findSection, useEditorSite } from '@/features/editor-site';
@@ -59,6 +59,8 @@ export function StructureTab({ active }: StructureTabProps) {
 
    const [sheetOpen, setSheetOpen] = useState(false);
    const addButtonRef = useRef<HTMLButtonElement>(null);
+   // DndContext의 id를 직접 정한다. 정하지 않으면 서버와 브라우저가 따로 번호를 매겨 접근성 속성(aria-describedby)이 달라지고 하이드레이션 경고가 난다.
+   const dndId = useId();
 
    // 다른 탭으로 옮겨 가면 시트를 닫는다. 시트는 화면 전체 위에 띄워서, 이 탭이 숨겨져도 따라서 숨겨지지 않는다.
    useEffect(() => {
@@ -163,6 +165,7 @@ export function StructureTab({ active }: StructureTabProps) {
             </div>
 
             <DndContext
+               id={dndId}
                sensors={sensors}
                collisionDetection={collisionDetection}
                onDragStart={handleDragStart}
