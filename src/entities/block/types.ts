@@ -27,10 +27,14 @@ export interface HeroContent {
 // ── 줄글 ──
 export type TextVariant = 'single' | 'withImage';
 
+// 글 정렬. 줄글에서만 고를 수 있고, 없으면 왼쪽이다. (다른 블록의 정렬은 구조(variant)에 따라 정해진다)
+export type TextAlign = 'left' | 'center' | 'right';
+
 export interface TextContent {
    title?: string;
    body: string;
    image?: BlockImage;
+   align?: TextAlign;
 }
 
 // ── 목록 ──
