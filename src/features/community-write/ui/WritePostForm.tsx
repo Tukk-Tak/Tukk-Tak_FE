@@ -48,8 +48,7 @@ export function WritePostForm() {
       if (!result?.ok) return;
 
       toast.show('글을 등록했어요', { tone: 'success' });
-      // 등록한 글을 바로 보여 준다. 서버가 새 글의 id를 아직 주지 않으면 목록으로 간다.
-      // TODO: 백엔드가 등록 응답(data)에 글 id(postId)를 돌려주면 항상 상세로 이동한다.
+      // 서버가 돌려준 새 글의 id로 상세 페이지로 바로 이동한다. id를 읽지 못하면 목록으로 간다.
       router.push(
          result.id ? `${COMMUNITY_PATH}/${encodeURIComponent(result.id)}` : COMMUNITY_PATH,
       );
