@@ -2,16 +2,13 @@
 # - 머지는 하지 않는다. PR이 올라오면 CI(lint, format)를 확인하고 직접 머지한다. 머지되면 deploy.yml 이 배포한다.
 # - 배포할 변경(deploy에 없는 main의 커밋)이 없거나, 이미 열린 배포 PR이 있으면 아무것도 하지 않는다.
 # - PAT(DEPLOY_PR_TOKEN)로 PR을 만든다. 기본 토큰(GITHUB_TOKEN)으로 만든 PR은 ci.yml 을 실행시키지 않기 때문이다.
-# - 스케줄 워크플로는 기본 브랜치(main)에 있는 파일만 실행된다. 이 파일이 main에 머지되어야 동작한다.
+# - 호출은 ref=main 으로 하므로, 이 파일이 main에 머지되어야 바뀐 내용이 반영된다.
 
 name: Daily Deploy PR
 
 on:
-   schedule:
-      # cron은 UTC 기준이다. 한국 시간 10:00 = UTC 01:00, 한국 시간 22:00 = UTC 13:00
-      # (정각에는 GitHub 서버가 몰려 늦게 돌 수 있어 몇 분 늦춰 둔다.)
-      - cron: '7 1,13 * * *'
-   # Actions 탭에서 수동으로 실행할 수도 있다.
+   # cron-job.org가 매일 10:00, 22:00(KST)에 GitHub API(workflow_dispatch)로 이 워크플로를 호출한다.
+   # GitHub 자체 schedule은 수 시간씩 늦게 돌아서 쓰지 않는다. Actions 탭에서 수동으로도 실행할 수 있다.
    workflow_dispatch:
 
 permissions:
@@ -60,27 +57,50 @@ jobs:
                 exit 0
               fi
 
-              NOW=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M')
+              # 제목은 기존 배포 PR과 같은 모양이다. (예: [Deploy] 26.11.17 02:15 p.m.)
+              HOUR=$(TZ=Asia/Seoul date '+%H')
+              if [ "$HOUR" -lt 12 ]; then MERIDIEM="a.m."; else MERIDIEM="p.m."; fi
+              NOW=$(TZ=Asia/Seoul date '+%y.%m.%d %I:%M')
+
+              # 본문은 팀 PR 템플릿과 같은 틀이다. 포함된 변경(커밋) 목록은 두 번째 "작업 상세 내용"에 채운다.
               {
                 echo "## 📌 PR 요약"
                 echo
-                echo "main의 변경 ${AHEAD}개를 deploy에 반영합니다. (자동 생성: ${NOW} KST)"
+                echo "- deploy 브랜치 업데이트"
                 echo
                 echo "## 🛠️ 작업 상세 내용"
                 echo
+                echo "- [ ] FEATURE"
+                echo "- [ ] UPDATE/STYLE"
+                echo "- [ ] BUGFIX"
+                echo "- [ ] REFACTOR"
                 echo "- [x] UPDATE MAIN(DEPLOY)"
                 echo
-                echo "## 📋 포함된 변경"
+                echo "## 📋 작업 상세 내용"
                 echo
-                git log --pretty='- %s (%an)' --max-count=50 origin/deploy..origin/main
+                git log --pretty='- %s' --max-count=50 origin/deploy..origin/main
+                echo
+                echo "## 🔗 PR 관련 이슈 닫기"
+                echo
+                echo "Closes #"
                 echo
                 echo "## 💬 메모"
                 echo
-                echo "- 머지하면 deploy.yml 이 Docker 빌드와 EC2 배포를 실행합니다. CI 결과를 확인한 뒤 머지해주세요."
+                echo "- "
+                echo
+                echo "## 📸 화면 이미지 첨부"
+                echo
+                echo "## 🐇 코드래빗 요약(작성 불필요)"
               } > pr-body.md
 
-              gh pr create \
+              PR_URL=$(gh pr create \
                 --base deploy \
                 --head main \
-                --title "[DEPLOY] ${NOW} 배포" \
-                --body-file pr-body.md
+                --title "[Deploy] ${NOW} ${MERIDIEM}" \
+                --body-file pr-body.md)
+              echo "배포 PR을 만들었어요: ${PR_URL}"
+
+              # 담당자·리뷰어·라벨은 PR을 만든 뒤에 붙인다. 하나가 실패해도(라벨 이름 변경, 계정 권한 등) PR은 남도록 경고만 남긴다.
+              gh pr edit "$PR_URL" --add-assignee always62442 || echo "::warning::담당자를 지정하지 못했어요."
+              gh pr edit "$PR_URL" --add-reviewer aida030313-coder || echo "::warning::리뷰어를 지정하지 못했어요."
+              gh pr edit "$PR_URL" --add-label Deploy || echo "::warning::Deploy 라벨을 붙이지 못했어요."
