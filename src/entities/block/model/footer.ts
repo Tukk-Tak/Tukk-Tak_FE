@@ -25,19 +25,28 @@ function toSafeHref(value: string): string | null {
    }
 }
 
+// 푸터에 링크로 보일 이름. 종류(kind)에 맞는 이름을 쓰고, 종류를 모르면 주소의 도메인 이름을 쓴다.
+function toSocialLabel(kind: string, href: string): string {
+   const key = kind.trim();
+   return SOCIAL_LABEL[key.toLowerCase()] ?? (key || new URL(href).hostname);
+}
+
 // 화면에 보일 SNS 링크 목록. 주소가 올바르지 않은 항목은 뺀다.
 export function getSocialLinks(social: FooterContent['social']): SocialLink[] {
    const links: SocialLink[] = [];
    for (const { kind, url } of social ?? []) {
       const href = toSafeHref(url);
       if (!href) continue;
-      const key = kind.trim();
-      links.push({
-         label: SOCIAL_LABEL[key.toLowerCase()] ?? (key || new URL(href).hostname),
-         href,
-      });
+      links.push({ label: toSocialLabel(kind, href), href });
    }
    return links;
+}
+
+// 이 SNS 항목이 푸터에서 어떤 이름으로 보이는지. 푸터에 나오지 않는 항목(올바르지 않은 주소)은 null이다.
+// 에디터가 입력 칸 아래에 "푸터에 보이는 이름"을 미리 알려 줄 때 쓴다.
+export function getSocialLabel({ kind, url }: { kind: string; url: string }): string | null {
+   const href = toSafeHref(url);
+   return href ? toSocialLabel(kind, href) : null;
 }
 
 // 저작권 문구가 비어 있으면 상호명으로 만든다.

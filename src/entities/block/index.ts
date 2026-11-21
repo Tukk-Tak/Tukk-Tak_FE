@@ -1,3 +1,11 @@
 export { BlockRenderer } from './ui/BlockRenderer';
+export { BlockThumbnail } from './ui/BlockThumbnail';
 export type * from './types';
-export { BLOCK_TYPE_LABEL, getVariantLabel } from './model/labels';
+export { BLOCK_TYPE_DESCRIPTION, BLOCK_TYPE_LABEL, getVariantLabel } from './model/labels';
+export { createListItem, createSection } from './model/defaults';
+export { BLOCK_VARIANTS, getBlockVariants, isHalfWidthCapable } from './model/variants';
+export { BLOCK_IMAGE_TYPES, BLOCK_LIMITS, IMAGE_SCALE } from './model/limits';
+export { isBlockPlaceholder, PLACEHOLDER } from './model/placeholders';
+export { isRequiredField, type RequiredFieldKey } from './model/required';
+export { inferSocialKind, isHttpUrl } from './model/social';
+export { getSocialLabel } from './model/footer';

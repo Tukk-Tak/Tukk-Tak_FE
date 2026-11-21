@@ -22,11 +22,11 @@ interface EditorCanvasProps {
 
 // 왼쪽 캔버스. 사이트 길이가 길면 이 영역 안에서만 세로로 스크롤되고, 안내와 기기 전환은 그 위에 떠 있다.
 export function EditorCanvas({ device, onDeviceChange, siteName, children }: EditorCanvasProps) {
-   const { selected, clear } = useEditorSelection();
+   const { selectedId, clear } = useEditorSelection();
 
    // 블록이 아닌 빈 곳(사이트 바깥 배경, 블록 사이의 빈 공간)을 누르면 선택을 해제한다.
    const clearOnBackground = (event: MouseEvent<HTMLDivElement>) => {
-      if (selected && !(event.target as Element).closest('[data-editable-block]')) clear();
+      if (selectedId && !(event.target as Element).closest('[data-editable-block]')) clear();
    };
 
    return (

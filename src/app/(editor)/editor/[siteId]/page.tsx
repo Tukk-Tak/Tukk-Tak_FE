@@ -1,8 +1,9 @@
 // ⚠️ 이 파일에는 상태 관리나 API 호출 로직을 직접 작성하지 않습니다. 조립만 합니다.
 import { getSite, getSiteTitle } from '@/entities/site';
 import { getTemplate } from '@/entities/template';
+import { EditorSiteProvider } from '@/features/editor-site';
 import { EditorLayout } from '@/widgets/editor-layout';
-import { SiteRenderer } from '@/widgets/site-renderer';
+import { EditableSite } from './EditableSite';
 
 interface EditorPageProps {
    params: Promise<{ siteId: string }>;
@@ -22,8 +23,12 @@ export default async function EditorPage({ params, searchParams }: EditorPagePro
 
    return (
       // TODO: 사이트 이름은 지금 헤더의 상호명에서 가져온다. 편집 중인 값을 따라가는 것과 별도 이름 필드 여부는 API 연동 때 정한다.
-      <EditorLayout siteName={getSiteTitle(site)}>
-         <SiteRenderer site={site} editable />
-      </EditorLayout>
+      // key: 같은 사이트 주소에서 ?template=, ?mock= 값만 바뀌어도 새 내용으로 저장소를 다시 만든다.
+      // (key가 없으면 화면이 유지되어 처음 만든 저장소가 계속 쓰인다. 바뀐 값의 내용은 저장하지 않은 편집과 함께 사라진다.)
+      <EditorSiteProvider key={`${siteId}|${templateId ?? ''}|${mock ?? ''}`} initialSite={site}>
+         <EditorLayout siteName={getSiteTitle(site)}>
+            <EditableSite />
+         </EditorLayout>
+      </EditorSiteProvider>
    );
 }
