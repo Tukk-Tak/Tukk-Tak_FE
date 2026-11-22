@@ -3,11 +3,14 @@ import { createSection, type BlockType } from '@/entities/block';
 import type { SiteContent } from '@/entities/site';
 import {
    addSection,
+   changeVariant,
    moveSectionToRow,
    pairSection,
    removeSection,
    swapRow,
    unpairRow,
+   updateSectionContent,
+   type ContentPatch,
 } from './structure';
 
 // 새 줄과 블록의 id. 브라우저에서 동작이 일어날 때만 만들어진다.
@@ -28,6 +31,11 @@ export interface EditorSiteState {
    pairSection: (sectionId: string, targetRowId: string) => void;
    swapRow: (rowId: string) => void;
    unpairRow: (rowId: string) => void;
+
+   // 블록 내용의 일부를 바꾼다. 입력할 때마다 불리므로 바뀐 블록만 새 객체가 되고 나머지는 그대로 유지된다.
+   updateContent: (sectionId: string, patch: ContentPatch) => void;
+   // 블록의 구조를 바꾼다. 전체 폭 전용 구조로 바꿔서 나란히 놓은 상태가 풀렸으면 true.
+   setVariant: (sectionId: string, variant: string) => boolean;
 }
 
 // 에디터마다 따로 만드는 저장소. 화면에 들어올 때 서버가 준 사이트 내용으로 시작한다.
@@ -59,6 +67,13 @@ export function createEditorSiteStore(initialSite: SiteContent) {
             updateRows((rows) => pairSection(rows, sectionId, targetRowId)),
          swapRow: (rowId) => updateRows((rows) => swapRow(rows, rowId)),
          unpairRow: (rowId) => updateRows((rows) => unpairRow(rows, rowId, newId('row'))),
+         updateContent: (sectionId, patch) =>
+            updateRows((rows) => updateSectionContent(rows, sectionId, patch)),
+         setVariant: (sectionId, variant) => {
+            const result = changeVariant(get().site.rows, sectionId, variant, newId('row'));
+            updateRows(() => result.rows);
+            return result.unpaired;
+         },
       };
    });
 }
