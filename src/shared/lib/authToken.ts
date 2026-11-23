@@ -19,6 +19,11 @@ function storages(): Storage[] {
    return available;
 }
 
+// 저장소에 쓰지 못했을 때만 쓰는 비상용 보관 변수다. (저장소를 막은 브라우저 등)
+// 저장소가 정상일 때는 항상 null이라서, 다른 탭에서 로그아웃해 저장소가 비면 이 탭도 같이 로그아웃된다.
+// 대신 이 경우의 로그인은 이 페이지가 열려 있는 동안만 유지되고, 새로고침하면 풀린다.
+let memoryToken: string | null = null;
+
 // 서버 렌더링 중에는 브라우저 저장소가 없으므로 토큰도 없다.
 export function getAccessToken(): string | null {
    if (typeof window === 'undefined') return null;
@@ -27,13 +32,14 @@ export function getAccessToken(): string | null {
          const token = storage.getItem(ACCESS_TOKEN_KEY);
          if (token) return token;
       } catch {
-         // 저장소를 읽을 수 없으면 토큰이 없는 것으로 본다.
+         // 저장소를 읽을 수 없으면 아래 비상용 변수를 본다.
       }
    }
-   return null;
+   return memoryToken;
 }
 
 export function clearAccessToken() {
+   memoryToken = null;
    for (const storage of storages()) {
       try {
          storage.removeItem(ACCESS_TOKEN_KEY);
@@ -49,6 +55,8 @@ export function saveAccessToken(token: string, remember: boolean) {
    try {
       (remember ? window.localStorage : window.sessionStorage).setItem(ACCESS_TOKEN_KEY, token);
    } catch {
-      // 저장소를 쓸 수 없으면 이 로그인은 새로고침하면 풀린다.
+      // 저장소를 쓸 수 없어도 토큰을 버리면 로그인 직후부터 인증 헤더 없이 요청하게 되므로,
+      // 이 페이지가 열려 있는 동안만이라도 쓸 수 있게 메모리에 둔다. (새로고침하면 풀린다.)
+      memoryToken = token;
    }
 }
