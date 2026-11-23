@@ -4,15 +4,17 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/+$/, '')
 
 // 로그인 토큰을 보냈는데 서버가 401(만료·무효)을 주면 불린다. 로그인 상태를 정리하는 쪽(sessionStore)이 등록한다.
 // shared는 entities를 import할 수 없어서, 세션을 직접 건드리지 않고 이렇게 알려 주기만 한다.
-let unauthorizedHandler: (() => void) | null = null;
+// 요청에 쓴 토큰을 함께 넘기는 이유: 응답이 늦게 오는 사이에 로그아웃하거나 새로 로그인했다면,
+// 그 401은 지금의 로그인과 상관없는 옛 토큰의 것이라서 받는 쪽이 지금 토큰과 비교해 무시할 수 있어야 한다.
+let unauthorizedHandler: ((sentToken: string) => void) | null = null;
 
-export function setUnauthorizedHandler(handler: (() => void) | null) {
+export function setUnauthorizedHandler(handler: ((sentToken: string) => void) | null) {
    unauthorizedHandler = handler;
 }
 
 // 요청에 토큰을 붙였는데 401이면 그 토큰은 더 쓸 수 없다. (토큰 없이 보낸 요청의 401, 예: 로그인 실패는 해당 없음)
-function notifyIfUnauthorized(status: number, sentToken: boolean) {
-   if (status === 401 && sentToken) unauthorizedHandler?.();
+function notifyIfUnauthorized(status: number, sentToken: string | null) {
+   if (status === 401 && sentToken) unauthorizedHandler?.(sentToken);
 }
 
 // 일반 요청과 파일 요청이 함께 쓰는 옵션.
@@ -22,9 +24,6 @@ interface ApiRequestOptions {
    // 쿠키를 함께 보낼지. 리프레시 토큰이 쿠키라서 로그인·로그아웃만 true다.
    // 다른 요청까지 켜면 서버 CORS가 credentials를 허용해야만 동작하므로 필요한 곳에만 쓴다.
    withCredentials?: boolean;
-   // 401(만료·무효)이 오면 로그인 상태를 정리하고 안내하게 할지. 기본은 한다.
-   // 로그아웃 요청처럼 사용자가 직접 로그아웃을 눌러서 보낸 요청은 false로 해서 "시간이 지나 로그아웃됐어요" 안내가 뜨지 않게 한다.
-   handleUnauthorized?: boolean;
 }
 
 // 백엔드가 모든 응답에 쓰는 공통 모양. 성공이면 data에 결과가, 실패면 code·message에 이유가 담긴다.
@@ -90,12 +89,7 @@ function toFailure(status: number, body: ApiEnvelope<unknown> | null): ApiError 
 // 일반 요청. 성공하면 공통 모양의 data를 돌려준다. 로그인 토큰이 있으면 Authorization 헤더로 함께 보낸다.
 export async function apiFetch<T>(
    path: string,
-   {
-      auth = true,
-      withCredentials = false,
-      handleUnauthorized = true,
-      ...init
-   }: RequestInit & ApiRequestOptions = {},
+   { auth = true, withCredentials = false, ...init }: RequestInit & ApiRequestOptions = {},
 ): Promise<T> {
    const token = auth ? getAccessToken() : null;
    const headers = new Headers(init.headers);
@@ -116,7 +110,7 @@ export async function apiFetch<T>(
 
    const body = parseEnvelope<T>(await res.text());
    if (!res.ok) {
-      notifyIfUnauthorized(res.status, Boolean(token) && handleUnauthorized);
+      notifyIfUnauthorized(res.status, token);
       throw toFailure(res.status, body);
    }
    return body?.data as T;
@@ -137,13 +131,7 @@ interface UploadOptions extends ApiRequestOptions {
 export function apiUploadForm<T>(
    path: string,
    form: FormData,
-   {
-      onProgress,
-      signal,
-      auth = true,
-      withCredentials = false,
-      handleUnauthorized = true,
-   }: UploadOptions = {},
+   { onProgress, signal, auth = true, withCredentials = false }: UploadOptions = {},
 ): Promise<T> {
    return new Promise<T>((resolve, reject) => {
       let url: string;
@@ -168,7 +156,7 @@ export function apiUploadForm<T>(
          if (xhr.status >= 200 && xhr.status < 300) {
             resolve(body?.data as T);
          } else {
-            notifyIfUnauthorized(xhr.status, Boolean(token) && handleUnauthorized);
+            notifyIfUnauthorized(xhr.status, token);
             reject(toFailure(xhr.status, body));
          }
       };

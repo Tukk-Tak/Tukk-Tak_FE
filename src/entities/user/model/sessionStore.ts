@@ -1,6 +1,6 @@
 import { createStore } from 'zustand';
 import { setUnauthorizedHandler } from '@/shared/lib/apiClient';
-import { clearAccessToken } from '@/shared/lib/authToken';
+import { clearAccessToken, getAccessToken } from '@/shared/lib/authToken';
 import { getMe } from '../api/getMe';
 import { logout } from '../api/logout';
 import { clearMockSession, MOCK_SESSION_KEY } from '../api/mockSession';
@@ -27,7 +27,10 @@ function setSession(next: SessionState) {
 // 서버가 로그인 토큰을 거절(401: 만료·무효)하면 이 브라우저의 로그인 상태를 정리한다.
 // 상태가 비면 로그인이 필요한 화면은 useMemberOnly가 로그인으로 보내고, 헤더는 비로그인 모습으로 바뀐다.
 // 토큰을 들고 있었다는 것은 로그인해 있었다는 뜻이므로, 사용자가 이유를 알 수 있게 만료 안내를 켠다.
-setUnauthorizedHandler(() => {
+// 401을 받은 요청의 토큰이 지금 저장된 토큰과 다르면, 그 사이에 로그아웃했거나 새로 로그인한 것이므로 무시한다.
+// (직접 로그아웃한 직후 진행 중이던 요청의 401로 "시간이 지나 로그아웃됐어요" 안내가 뜨거나, 새 로그인이 지워지는 것을 막는다.)
+setUnauthorizedHandler((sentToken) => {
+   if (getAccessToken() !== sentToken) return;
    clearAccessToken();
    clearMockSession();
    setSession({ status: 'ready', user: null, expired: true });
@@ -71,10 +74,8 @@ export function signIn(user: User) {
    setSession({ status: 'ready', user });
 }
 
+// 로그아웃. 이 브라우저의 토큰·세션 정리와 화면 상태 변경을 바로 끝내고, 서버에는 그 뒤에 알린다. (서버 응답을 기다리지 않는다.)
 export async function signOut() {
-   try {
-      await logout();
-   } finally {
-      setSession({ status: 'ready', user: null });
-   }
+   logout();
+   setSession({ status: 'ready', user: null });
 }
