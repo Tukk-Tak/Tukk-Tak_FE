@@ -40,18 +40,26 @@ export async function fetchMe(token?: string): Promise<User> {
 // - 404(토큰은 유효한데 회원이 없음)이면: 더 쓸 수 없는 로그인이므로 정리하고 null이다.
 // - 그 밖의 오류(네트워크 끊김, 서버 오류)이면: 토큰은 그대로 두고, 마지막으로 저장해 둔 사용자 정보를 보여 준다.
 //   잠깐 끊겼을 뿐인데 로그아웃된 것처럼 보이면 안 되기 때문이다. 저장된 값이 없으면 null이다.
+// 조회하는 동안 다른 탭에서 새로 로그인하거나 로그아웃할 수 있다. 그러면 이 조회는 옛 토큰의 것이라서,
+// 결과를 저장소에 반영(캐시 갱신, 토큰·캐시 삭제)하기 직전에 지금도 같은 토큰인지 확인하고 다를 때는 건드리지 않는다.
+// (옛 토큰의 결과가 새 로그인의 캐시를 덮어쓰거나, 옛 토큰의 404가 새 로그인을 지우는 것을 막는다.)
 export async function getMe(): Promise<User | null> {
-   if (!getAccessToken()) return readMockSession();
+   const token = getAccessToken();
+   if (!token) return readMockSession();
+
+   const isStillCurrent = () => getAccessToken() === token;
 
    try {
       const user = await fetchMe();
-      updateMockSession(user);
+      if (isStillCurrent()) updateMockSession(user);
       return user;
    } catch (error) {
       if (error instanceof ApiError && error.status === 401) return null;
       if (error instanceof ApiError && error.status === 404) {
-         clearAccessToken();
-         clearMockSession();
+         if (isStillCurrent()) {
+            clearAccessToken();
+            clearMockSession();
+         }
          return null;
       }
       return readMockSession();
