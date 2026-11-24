@@ -5,8 +5,11 @@ interface SendEmailCodeData {
    resendAfterSeconds?: number;
 }
 
-// 서버가 유효 시간을 주지 않을 때 쓰는 기본값이다. (명세의 예시 값)
+// 서버가 값을 주지 않을 때 쓰는 기본값이다. (명세의 예시 값)
 const DEFAULT_EXPIRES_IN_SECONDS = 300;
+// 이 시간 안에 다시 보내면 서버가 429로 거절한다. 응답에서 이 값이 빠져도 그 사이에 다시 받기를 누르지 못하게 같은 시간을 기다리게 한다.
+// (공용 훅이 아니라 가입 쪽에 두는 이유: 비밀번호 재설정은 이 값을 주지 않으며 지금처럼 대기 없이 동작해야 한다.)
+const DEFAULT_RESEND_AFTER_SECONDS = 60;
 
 // 인증번호 발송 POST /auth/email/send
 // 가입에서는 이미 가입된 이메일이면 409(AUTH-EMAIL-ALREADY-REGISTERED)이고, 너무 빨리 다시 보내거나(429) 횟수를 넘겨도(429) 거절한다.
@@ -29,6 +32,8 @@ export async function sendEmailCode(
             ? data.expiresInSeconds
             : DEFAULT_EXPIRES_IN_SECONDS,
       resendAfterSeconds:
-         typeof data?.resendAfterSeconds === 'number' ? data.resendAfterSeconds : undefined,
+         typeof data?.resendAfterSeconds === 'number'
+            ? data.resendAfterSeconds
+            : DEFAULT_RESEND_AFTER_SECONDS,
    };
 }

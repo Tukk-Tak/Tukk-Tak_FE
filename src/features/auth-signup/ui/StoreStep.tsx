@@ -32,6 +32,8 @@ export function StoreStep({ account, onBack, onEditEmail }: StoreStepProps) {
       event.preventDefault();
       if (!canSubmit || account.emailToken === null) return;
 
+      // 가입을 요청하는 동안에도 입력을 고칠 수 있으므로, 요청 당시의 입력을 기억해 둔다. (아래 실패 처리에서 비교한다.)
+      const submitted = form.snapshotInputs();
       const result = await signupSubmit.submit({
          provider: 'EMAIL',
          emailToken: account.emailToken,
@@ -59,14 +61,14 @@ export function StoreStep({ account, onBack, onEditEmail }: StoreStepProps) {
          // 중복확인 뒤에 다른 사람이 같은 이름을 썼다. 닉네임 칸에서 다시 확인하게 한다.
          case SIGNUP_ERROR.NICKNAME_ALREADY_USED:
             signupSubmit.clearError();
-            form.nicknameCheck.reject(result.message);
+            form.rejectNickname(submitted, result.message);
             break;
          // 사업자 인증을 더 쓸 수 없다. 사업자 칸에 사유를 보여 주고 다시 인증하게 한다.
          case SIGNUP_ERROR.BUSINESS_TOKEN_INVALID:
          case SIGNUP_ERROR.BUSINESS_NAME_MISMATCH:
          case SIGNUP_ERROR.BUSINESS_ALREADY_USED:
             signupSubmit.clearError();
-            form.businessVerify.fail(result.message);
+            form.failBusiness(submitted, result.message);
             break;
          // 그 밖의 오류(입력값 오류 등)는 폼 아래에 서버 message를 그대로 보여 준다. (useSignupSubmit이 이미 보관했다.)
          default:
