@@ -72,7 +72,7 @@ export function NicknameField({
                중복확인을 해주세요
             </FieldMessage>
          ) : (
-            <FieldMessage id="nickname-message">공백 없이 15자 이내</FieldMessage>
+            <FieldMessage id="nickname-message">공백 없이 2~15자</FieldMessage>
          )}
       </FormField>
    );

@@ -38,7 +38,15 @@ export function useNicknameCheck() {
       setMessage(null);
    }, []);
 
-   return { status, message, checking: pending, check, reset };
+   // 가입 요청이 "이미 쓰는 닉네임"이라고 돌아온 경우처럼, 확인 요청 밖에서 사용할 수 없다는 것을 알게 됐을 때 쓴다.
+   // (중복확인 뒤 가입하기 전에 다른 사람이 같은 이름을 쓴 경우)
+   const reject = useCallback((reason: string) => {
+      versionRef.current += 1;
+      setStatus('rejected');
+      setMessage(reason);
+   }, []);
+
+   return { status, message, checking: pending, check, reset, reject };
 }
 
 export type NicknameCheckState = ReturnType<typeof useNicknameCheck>;

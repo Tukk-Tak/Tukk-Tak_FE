@@ -62,7 +62,12 @@ export function SignupForm({ googleError }: { googleError?: GoogleAuthError }) {
 
          <div hidden={step !== 2}>
             <StoreStep
-               account={{ email: account.email, password: account.password }}
+               account={{
+                  email: account.email,
+                  password: account.password,
+                  passwordConfirm: account.passwordConfirm,
+                  emailToken: emailVerification.verifiedResult,
+               }}
                onBack={() => goTo(1)}
                onEditEmail={editEmail}
             />

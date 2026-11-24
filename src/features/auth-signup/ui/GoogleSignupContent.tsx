@@ -6,6 +6,7 @@ import { useGoogleAuthStart } from '@/shared/lib/useGoogleAuthStart';
 import { useSingleFlight } from '@/shared/lib/useSingleFlight';
 import { Button } from '@/shared/ui/Button';
 import { FieldMessage } from '@/shared/ui/FieldMessage';
+import { useToast } from '@/shared/ui/toastContext';
 import { cancelGoogleSignup } from '../api/cancelGoogleSignup';
 import { useSignupSubmit } from '../model/useSignupSubmit';
 import { useStoreForm } from '../model/useStoreForm';
@@ -17,6 +18,7 @@ import { StoreFields } from './StoreFields';
 // 이름 칸은 구글 이름으로 미리 채워 두며, 그대로 수정할 수 있다.
 export function GoogleSignupContent({ profile }: { profile: GoogleProfile }) {
    const router = useRouter();
+   const toast = useToast();
    const signupSubmit = useSignupSubmit();
    const form = useStoreForm({ initialName: profile.name, onEdit: signupSubmit.clearError });
    const googleStart = useGoogleAuthStart('signup');
@@ -28,11 +30,14 @@ export function GoogleSignupContent({ profile }: { profile: GoogleProfile }) {
       event.preventDefault();
       if (!canSubmit) return;
 
-      const succeeded = await signupSubmit.submit({
+      const result = await signupSubmit.submit({
          provider: 'GOOGLE',
          ...form.buildPayloadBase(),
       });
-      if (succeeded) router.push('/login');
+      if (result?.ok) {
+         toast.show('가입이 완료됐어요. 로그인해주세요', { tone: 'success' });
+         router.push('/login');
+      }
    };
 
    // 가입을 취소하면 구글에서 가져온 정보를 버리고 메인으로 돌아간다.

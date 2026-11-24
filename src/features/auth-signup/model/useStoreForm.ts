@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { SignupPayloadBase, StoreValues } from '../types';
 import { useBusinessVerify } from './useBusinessVerify';
 import { useNicknameCheck } from './useNicknameCheck';
@@ -23,6 +23,15 @@ const EMPTY_VALUES: StoreValues = {
 
 type Touched = Partial<Record<keyof StoreValues, boolean>>;
 
+// 가입을 요청한 시점의 닉네임·사업자 입력. 가입 요청이 오래 걸리는 동안 입력을 고칠 수 있으므로,
+// 늦게 도착한 실패 응답이 고친 입력에 적용되지 않게 "지금 입력이 그때와 같은지" 비교하는 데 쓴다.
+export interface SubmittedInputs {
+   nickname: string;
+   name: string;
+   businessNumber: string;
+   openDate: string;
+}
+
 interface UseStoreFormOptions {
    // 구글 가입처럼 이름을 미리 채워 두는 경우
    initialName?: string;
@@ -37,6 +46,12 @@ export function useStoreForm({ initialName = '', onEdit }: UseStoreFormOptions =
 
    const nicknameCheck = useNicknameCheck();
    const businessVerify = useBusinessVerify();
+
+   // 비동기 응답이 도착했을 때 가장 최근 입력을 읽기 위한 참조. (응답을 처리하는 함수는 요청 당시 화면의 값을 들고 있어서 낡았다.)
+   const latestValuesRef = useRef(values);
+   useEffect(() => {
+      latestValuesRef.current = values;
+   });
 
    const errors = getStoreStepErrors(values);
    // 입력 칸을 벗어난 뒤에야 오류를 보여준다. (입력 도중에는 아직 쓰는 중이므로)
@@ -103,14 +118,38 @@ export function useStoreForm({ initialName = '', onEdit }: UseStoreFormOptions =
       name: trimmedName,
       nickname: values.nickname,
       phone: values.phone,
-      business: businessVerified
-         ? { businessNumber: onlyDigits(values.businessNumber), openDate: values.openDate }
-         : undefined,
+      // 사업자 번호와 개업일자는 인증 때 서버에 이미 보냈으므로, 가입에는 인증 결과로 받은 토큰만 보낸다.
+      businessToken: businessVerified ? (businessVerify.token ?? undefined) : undefined,
       store: hasStoreInfoInput(values)
          ? { address: values.storeAddress.trim(), phone: values.storePhone }
          : undefined,
       agreedToTerms: true,
    });
+
+   // 가입을 요청하기 직전에 부른다. 돌려준 값을 아래 두 함수에 그대로 넘긴다.
+   const snapshotInputs = (): SubmittedInputs => ({
+      nickname: values.nickname,
+      name: trimmedName,
+      businessNumber: values.businessNumber,
+      openDate: values.openDate,
+   });
+
+   // 가입 요청이 "이미 쓰는 닉네임"이라고 돌아왔을 때, 요청한 닉네임이 지금도 입력칸의 값일 때만 "사용 불가"로 바꾼다.
+   // 그 사이에 닉네임을 고쳤다면 이 실패는 옛 닉네임의 것이라서 무시한다. (고친 닉네임의 확인 결과를 지우지 않는다.)
+   const rejectNickname = (submitted: SubmittedInputs, reason: string) => {
+      if (latestValuesRef.current.nickname === submitted.nickname) nicknameCheck.reject(reason);
+   };
+
+   // 가입 요청이 사업자 인증 때문에 거절됐을 때, 인증에 쓴 값(이름, 사업자 번호, 개업일자)이 지금도 같을 때만 실패로 바꾼다.
+   // 그 사이에 고쳤다면 이 실패는 옛 입력의 것이라서 무시한다.
+   const failBusiness = (submitted: SubmittedInputs, reason: string) => {
+      const latest = latestValuesRef.current;
+      const unchanged =
+         latest.name.trim() === submitted.name &&
+         latest.businessNumber === submitted.businessNumber &&
+         latest.openDate === submitted.openDate;
+      if (unchanged) businessVerify.fail(reason);
+   };
 
    return {
       values,
@@ -128,6 +167,9 @@ export function useStoreForm({ initialName = '', onEdit }: UseStoreFormOptions =
       handleBusinessChange,
       handleVerifyBusiness,
       buildPayloadBase,
+      snapshotInputs,
+      rejectNickname,
+      failBusiness,
    };
 }
 
