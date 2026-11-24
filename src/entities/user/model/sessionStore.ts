@@ -1,6 +1,6 @@
 import { createStore } from 'zustand';
 import { setUnauthorizedHandler } from '@/shared/lib/apiClient';
-import { clearAccessToken, getAccessToken } from '@/shared/lib/authToken';
+import { ACCESS_TOKEN_KEY, clearAccessToken, getAccessToken } from '@/shared/lib/authToken';
 import { getMe } from '../api/getMe';
 import { logout } from '../api/logout';
 import { clearMockSession, MOCK_SESSION_KEY } from '../api/mockSession';
@@ -46,16 +46,36 @@ export function consumeExpiredNotice(): boolean {
 }
 
 async function refresh() {
+   const tokenAtStart = getAccessToken();
+
+   let user: User | null;
    try {
-      setSession({ status: 'ready', user: await getMe() });
+      user = await getMe();
    } catch {
-      setSession({ status: 'ready', user: null });
+      user = null;
    }
+
+   // 조회하는 동안 토큰이 바뀌었다면 이 결과가 지금 상태에 맞는지 따져 본다.
+   // - 새 토큰이 저장됐다면(그 사이에 새로 로그인): 옛 토큰의 결과이므로 버린다.
+   // - 토큰이 지워졌는데 사용자를 받았다면(그 사이에 로그아웃): 반영하면 방금 로그아웃했는데 다시 로그인된 것처럼 보이므로 버린다.
+   // - 토큰이 지워졌고 사용자도 없다면(조회 중 401·404로 정리됨): 비로그인 상태를 반영해야 하므로 버리지 않는다.
+   const tokenNow = getAccessToken();
+   if (tokenNow !== tokenAtStart && (tokenNow !== null || user)) return;
+
+   // 조회 중에 401로 만료 처리가 됐다면(토큰 정리와 함께 expired가 켜진 상태) 그 안내 표시를 지우지 않는다.
+   setSession(
+      user
+         ? { status: 'ready', user }
+         : { status: 'ready', user: null, expired: sessionStore.getState().expired },
+   );
 }
 
 // 다른 탭에서 로그인하거나 로그아웃하면 저장소가 바뀌므로 세션을 다시 확인한다.
+// 토큰이 바뀌는 경우(로그인·로그아웃)와 구글 mock 로그인처럼 사용자 정보만 바뀌는 경우를 모두 본다.
 function handleStorage(event: StorageEvent) {
-   if (event.key === MOCK_SESSION_KEY || event.key === null) void refresh();
+   if (event.key === ACCESS_TOKEN_KEY || event.key === MOCK_SESSION_KEY || event.key === null) {
+      void refresh();
+   }
 }
 
 let started = false;
