@@ -64,12 +64,19 @@ export function isValidOpenDate(value: string) {
 }
 
 // ── 닉네임 / 사업장명 ──
+// 서버가 1자(예: "a")를 거절하므로 최소 길이를 둔다. 정확한 최소값은 명세에 없어 거절이 확실한 1자만 미리 막고,
+// 특수문자·자음만 같은 나머지 규칙은 중복확인 때 서버가 주는 메시지에 맡긴다.
+const NICKNAME_MIN_LENGTH = 2;
 const NICKNAME_MAX_LENGTH = 15;
 
 export function getNicknameError(nickname: string) {
    if (!nickname.trim()) return '닉네임 / 사업장명을 입력해주세요';
-   if (/\s/.test(nickname) || nickname.length > NICKNAME_MAX_LENGTH) {
-      return '공백 없이 15자 이내로 입력해주세요';
+   if (
+      /\s/.test(nickname) ||
+      nickname.length < NICKNAME_MIN_LENGTH ||
+      nickname.length > NICKNAME_MAX_LENGTH
+   ) {
+      return `공백 없이 ${NICKNAME_MIN_LENGTH}자 이상 ${NICKNAME_MAX_LENGTH}자 이내로 입력해주세요`;
    }
    return undefined;
 }

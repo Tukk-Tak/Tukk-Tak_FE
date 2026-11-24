@@ -103,9 +103,8 @@ export function useStoreForm({ initialName = '', onEdit }: UseStoreFormOptions =
       name: trimmedName,
       nickname: values.nickname,
       phone: values.phone,
-      business: businessVerified
-         ? { businessNumber: onlyDigits(values.businessNumber), openDate: values.openDate }
-         : undefined,
+      // 사업자 번호와 개업일자는 인증 때 서버에 이미 보냈으므로, 가입에는 인증 결과로 받은 토큰만 보낸다.
+      businessToken: businessVerified ? (businessVerify.token ?? undefined) : undefined,
       store: hasStoreInfoInput(values)
          ? { address: values.storeAddress.trim(), phone: values.storePhone }
          : undefined,
