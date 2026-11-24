@@ -101,7 +101,11 @@ export function GoogleSignupContent({ ticket }: { ticket: GoogleSignupTicket }) 
 
          <div className="mt-8 space-y-6">
             {/* 다른 계정으로 바꾸려면 구글 로그인 화면에서 계정 선택부터 다시 해야 하므로 회원가입 처음 화면으로 보낸다. */}
-            <GoogleAccountCard profile={ticket} onChangeAccount={() => leave('/signup')} />
+            <GoogleAccountCard
+               profile={ticket}
+               disabled={signupSubmit.submitting}
+               onChangeAccount={() => leave('/signup')}
+            />
             <StoreFields form={form} />
          </div>
 

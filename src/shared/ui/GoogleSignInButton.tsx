@@ -29,14 +29,16 @@ export function GoogleSignInButton({ onCredential, disabled = false }: GoogleSig
    const wrapperRef = useRef<HTMLDivElement>(null);
    const containerRef = useRef<HTMLDivElement>(null);
    const handlerRef = useRef(onCredential);
+   const disabledRef = useRef(disabled);
    // 클라이언트 ID가 없으면 스크립트를 불러올 필요가 없으므로 처음부터 "사용할 수 없음"이다.
    const [status, setStatus] = useState<Status>(GOOGLE_CLIENT_ID ? 'loading' : 'unavailable');
    // 투명한 구글 버튼을 시안 버튼 크기에 맞추는 배율
    const [scale, setScale] = useState({ x: 1, y: 1 });
 
-   // 구글이 토큰을 줄 때는 항상 가장 최근에 넘겨받은 함수를 부른다. (화면이 다시 그려져도 버튼을 다시 만들지 않는다.)
+   // 구글이 토큰을 줄 때는 항상 가장 최근에 넘겨받은 함수와 비활성 여부를 쓴다. (화면이 다시 그려져도 버튼을 다시 만들지 않는다.)
    useEffect(() => {
       handlerRef.current = onCredential;
+      disabledRef.current = disabled;
    });
 
    useEffect(() => {
@@ -51,7 +53,11 @@ export function GoogleSignInButton({ onCredential, disabled = false }: GoogleSig
          .then((google) => {
             const container = containerRef.current;
             if (cancelled || !container) return;
-            setGoogleCredentialHandler((credential) => handlerRef.current(credential));
+            setGoogleCredentialHandler((credential) => {
+               // 비활성 중에 시작해서 이미 열려 있던 구글 창에서 돌아온 응답은 무시한다. (버튼을 막는 것만으로는 이 응답을 막지 못한다.)
+               if (disabledRef.current) return;
+               handlerRef.current(credential);
+            });
             renderGoogleButton(google, container);
             setStatus('ready');
          })
@@ -111,8 +117,10 @@ export function GoogleSignInButton({ onCredential, disabled = false }: GoogleSig
                   : ''
             }
          />
-         {/* 투명한 구글 버튼. 시안 버튼과 같은 자리를 덮고, 처리 중에는 눌리지 않게 한다. */}
+         {/* 투명한 구글 버튼. 시안 버튼과 같은 자리를 덮는다.
+             처리 중에는 inert로 마우스뿐 아니라 키보드 포커스와 엔터 입력까지 막는다. (pointer-events-none은 키보드를 막지 못한다.) */}
          <div
+            inert={!interactive}
             className={`absolute inset-0 overflow-hidden rounded-lg opacity-[0.01] ${
                interactive ? '' : 'pointer-events-none'
             }`}

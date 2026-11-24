@@ -5,10 +5,12 @@ import { clearMockSession, readMockSession, updateMockSession } from './mockSess
 
 // 내 정보 조회 응답(data) 중 화면이 쓰는 것만 적는다.
 // business는 사업자 인증을 한 적이 없으면 null이다.
+// loginType은 가입한 방식이다. 명세의 예시에는 LOCAL(이메일 가입)만 있고, 구글 계정은 GOOGLE로 보고 처리한다.
 interface MyInfoData {
    name: string;
    nickname: string;
    business: unknown;
+   loginType?: unknown;
 }
 
 function toUser(data: MyInfoData | null | undefined): User {
@@ -19,6 +21,11 @@ function toUser(data: MyInfoData | null | undefined): User {
       nickname: data.nickname,
       name: data.name,
       isBusinessVerified: Boolean(data.business),
+      // 구글이 아니면 이메일 가입으로 본다. (값이 없거나 알 수 없는 값이어도 비밀번호 변경이 막히지 않는 쪽이 안전하다.)
+      authProvider:
+         typeof data.loginType === 'string' && data.loginType.toUpperCase() === 'GOOGLE'
+            ? 'GOOGLE'
+            : 'LOCAL',
    };
 }
 

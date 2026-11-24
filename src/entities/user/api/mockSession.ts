@@ -8,15 +8,16 @@ export const MOCK_SESSION_KEY = 'ttukttak:mock-session';
 // TODO: 구글 로그인 API를 연동하면 이름을 바꾸거나(예: userCache) 용도 1)을 지운다.
 // 로그인 상태 유지를 체크하면 localStorage(브라우저를 닫아도 유지), 해제하면 sessionStorage(탭을 닫으면 로그아웃)에 둔다.
 
-// 저장된 값에서 User를 꺼낸다. 필드가 없던 예전 세션은 인증은 "미인증", 이름은 닉네임으로 채운다.
+// 저장된 값에서 User를 꺼낸다. 필드가 없던 예전 세션은 인증은 "미인증", 이름은 닉네임, 가입 방식은 이메일로 채운다.
 function parseUser(value: unknown): User | null {
    if (typeof value !== 'object' || value === null) return null;
-   const { nickname, name, isBusinessVerified } = value as Record<string, unknown>;
+   const { nickname, name, isBusinessVerified, authProvider } = value as Record<string, unknown>;
    if (typeof nickname !== 'string') return null;
    return {
       nickname,
       name: typeof name === 'string' ? name : nickname,
       isBusinessVerified: isBusinessVerified === true,
+      authProvider: authProvider === 'GOOGLE' ? 'GOOGLE' : 'LOCAL',
    };
 }
 

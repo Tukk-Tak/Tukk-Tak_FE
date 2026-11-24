@@ -31,6 +31,11 @@ export function LoginForm() {
    const loginSubmit = useLoginSubmit();
    const googleAuth = useGoogleAuth();
 
+   // 이메일 로그인과 구글 로그인은 한쪽이 끝날 때까지 다른 쪽을 시작하지 않는다.
+   // 두 요청이 서로 다른 계정으로 성공하면 나중에 끝난 쪽이 최종 로그인 계정이 되기 때문이다.
+   // 버튼을 비활성화하는 것만으로는 이미 열린 구글 창에서 돌아오는 응답이나 엔터 입력을 막지 못해서, 각 처리기에서도 확인한다.
+   const authBusy = loginSubmit.submitting || googleAuth.busy;
+
    const errors = showValidation ? getLoginErrors(values) : {};
    const invalidCredentials = loginSubmit.error?.code === LOGIN_ERROR.INVALID_CREDENTIALS;
 
@@ -41,7 +46,7 @@ export function LoginForm() {
 
    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (loginSubmit.submitting) return;
+      if (authBusy) return;
 
       if (Object.keys(getLoginErrors(values)).length > 0) {
          setShowValidation(true);
@@ -63,6 +68,12 @@ export function LoginForm() {
          setValues((prev) => ({ ...prev, password: '' }));
          document.getElementById('password')?.focus();
       }
+   };
+
+   // 이메일 로그인이 진행 중일 때 구글 창에서 돌아온 응답은 무시한다.
+   const handleGoogleCredential = (credential: string) => {
+      if (loginSubmit.submitting) return;
+      googleAuth.handleCredential(credential);
    };
 
    return (
@@ -123,12 +134,7 @@ export function LoginForm() {
             </FieldMessage>
          )}
 
-         <Button
-            type="submit"
-            size="form"
-            disabled={loginSubmit.submitting}
-            className="mt-5 w-full"
-         >
+         <Button type="submit" size="form" disabled={authBusy} className="mt-5 w-full">
             {loginSubmit.submitting ? '로그인 중' : '로그인'}
          </Button>
 
@@ -136,10 +142,7 @@ export function LoginForm() {
             <OrDivider />
          </div>
 
-         <GoogleSignInButton
-            onCredential={googleAuth.handleCredential}
-            disabled={googleAuth.busy || loginSubmit.submitting}
-         />
+         <GoogleSignInButton onCredential={handleGoogleCredential} disabled={authBusy} />
          {googleAuth.error && (
             <FieldMessage tone="error" className="mt-3 text-center">
                {googleAuth.error}

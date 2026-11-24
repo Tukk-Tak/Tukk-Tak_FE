@@ -11,12 +11,11 @@ export interface GoogleSignupTicket {
 
 const GOOGLE_SIGNUP_KEY = 'ttukttak:google-signup';
 
+// 저장에 실패하면 예외를 던진다. (조용히 넘어가면 가입 화면으로 이동했을 때 읽을 티켓이 없거나, 이전 계정의 티켓을 읽게 된다.)
 export function saveGoogleSignupTicket(ticket: GoogleSignupTicket) {
-   try {
-      window.sessionStorage.setItem(GOOGLE_SIGNUP_KEY, JSON.stringify(ticket));
-   } catch {
-      // 저장소를 쓸 수 없으면 가입 화면에서 정보를 읽지 못해 처음부터 다시 시작하게 된다.
-   }
+   // 이전 계정의 티켓이 남아 있으면 새 티켓 저장이 실패했을 때 그 티켓이 그대로 쓰인다. 먼저 지운다.
+   clearGoogleSignupTicket();
+   window.sessionStorage.setItem(GOOGLE_SIGNUP_KEY, JSON.stringify(ticket));
 }
 
 export function readGoogleSignupTicket(): GoogleSignupTicket | null {

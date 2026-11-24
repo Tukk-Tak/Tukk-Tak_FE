@@ -39,11 +39,19 @@ export async function authenticateWithGoogle(credential: string): Promise<Google
    }
 
    if (data?.registered === false && data.signupTicket && data.email && data.name) {
-      saveGoogleSignupTicket({
-         signupTicket: data.signupTicket,
-         email: data.email,
-         name: data.name,
-      });
+      // 티켓을 저장하지 못하면 가입 화면이 이어서 쓸 정보가 없으므로, 이동하지 않고 오류로 알린다.
+      try {
+         saveGoogleSignupTicket({
+            signupTicket: data.signupTicket,
+            email: data.email,
+            name: data.name,
+         });
+      } catch {
+         throw new ApiError(
+            'STORAGE_UNAVAILABLE',
+            '브라우저 저장소를 사용할 수 없어 구글 가입을 이어갈 수 없어요. 브라우저 설정을 확인한 뒤 다시 시도해주세요',
+         );
+      }
       return { status: 'signup-required' };
    }
 
