@@ -1,9 +1,7 @@
-// 구글 인증이 실패해서 /signup 으로 돌아올 때 주소에 담기는 값. (/signup?google=registered)
-// 사용자가 구글 창에서 직접 취소한 경우는 오류가 아니므로 안내 문구를 보여주지 않는다.
+// 구글 가입 화면(/signup/google)에서 가입 티켓이 없거나 시간이 지나 /signup 으로 돌아올 때 주소에 담기는 값. (/signup?google=expired)
+// 구글 인증 자체의 실패는 주소가 아니라 구글 버튼 아래에 서버 메시지로 바로 보여 준다.
 export const GOOGLE_AUTH_ERROR = {
-   REGISTERED: 'registered', // 이미 가입된 구글 계정
-   FAILED: 'failed', // 연결에 실패
-   EXPIRED: 'expired', // 가입 대기 정보가 없거나 시간이 지남
+   EXPIRED: 'expired', // 가입 티켓이 없거나 이미 쓰였거나 시간이 지남
 } as const;
 
 export type GoogleAuthError = (typeof GOOGLE_AUTH_ERROR)[keyof typeof GOOGLE_AUTH_ERROR];

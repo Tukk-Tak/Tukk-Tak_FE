@@ -4,30 +4,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { signIn } from '@/entities/user/model/sessionStore';
+import { useGoogleAuth } from '@/entities/user/model/useGoogleAuth';
 import { useGuestOnly } from '@/entities/user/model/useGuestOnly';
 import { FIND_PASSWORD_PATH } from '@/shared/config/routes';
-import { useGoogleAuthStart } from '@/shared/lib/useGoogleAuthStart';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { FieldMessage } from '@/shared/ui/FieldMessage';
 import { FormField } from '@/shared/ui/FormField';
-import { GoogleButton } from '@/shared/ui/GoogleButton';
+import { GoogleSignInButton } from '@/shared/ui/GoogleSignInButton';
 import { Input } from '@/shared/ui/Input';
 import { OrDivider } from '@/shared/ui/OrDivider';
 import { PasswordInput } from '@/shared/ui/PasswordInput';
 import { LOGIN_ERROR } from '../model/errorCodes';
-import { GOOGLE_AUTH_ERROR, type GoogleAuthError } from '../model/googleAuthError';
 import { useLoginSubmit } from '../model/useLoginSubmit';
 import { getLoginErrors } from '../model/validation';
 import type { LoginValues } from '../types';
-import { GoogleAuthErrorMessage } from './GoogleAuthErrorMessage';
 
-interface LoginFormProps {
-   // 구글 인증이 실패해서 돌아왔을 때 주소(/login?google=...)로 전달된 오류
-   googleError?: GoogleAuthError;
-}
-
-export function LoginForm({ googleError }: LoginFormProps) {
+export function LoginForm() {
    const router = useRouter();
    // 이미 로그인한 사용자가 들어오면 메인으로 돌려보낸다.
    useGuestOnly();
@@ -36,12 +29,10 @@ export function LoginForm({ googleError }: LoginFormProps) {
    // 시안처럼 로그인 버튼은 항상 활성이다. 처음 눌러 보기 전에는 오류를 보여주지 않는다.
    const [showValidation, setShowValidation] = useState(false);
    const loginSubmit = useLoginSubmit();
-   const googleStart = useGoogleAuthStart('login');
+   const googleAuth = useGoogleAuth();
 
    const errors = showValidation ? getLoginErrors(values) : {};
    const invalidCredentials = loginSubmit.error?.code === LOGIN_ERROR.INVALID_CREDENTIALS;
-   // 이동을 시작하는 데 실패한 경우는 "연결 실패"로 보여준다.
-   const shownGoogleError = googleStart.failed ? GOOGLE_AUTH_ERROR.FAILED : googleError;
 
    const setValue = (patch: Partial<LoginValues>) => {
       setValues((prev) => ({ ...prev, ...patch }));
@@ -145,8 +136,15 @@ export function LoginForm({ googleError }: LoginFormProps) {
             <OrDivider />
          </div>
 
-         <GoogleButton disabled={googleStart.connecting} onClick={() => googleStart.start()} />
-         {shownGoogleError && <GoogleAuthErrorMessage error={shownGoogleError} />}
+         <GoogleSignInButton
+            onCredential={googleAuth.handleCredential}
+            disabled={googleAuth.busy || loginSubmit.submitting}
+         />
+         {googleAuth.error && (
+            <FieldMessage tone="error" className="mt-3 text-center">
+               {googleAuth.error}
+            </FieldMessage>
+         )}
 
          <Link
             href={FIND_PASSWORD_PATH}

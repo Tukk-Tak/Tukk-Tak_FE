@@ -2,23 +2,24 @@
 
 import Link from 'next/link';
 import type { FormEvent } from 'react';
+import { useGoogleAuth } from '@/entities/user/model/useGoogleAuth';
 import { isPasswordValid } from '@/shared/lib/passwordRules';
 import type { EmailVerificationState } from '@/shared/lib/useEmailVerification';
-import { useGoogleAuthStart } from '@/shared/lib/useGoogleAuthStart';
 import { Button } from '@/shared/ui/Button';
 import { EmailVerifyField } from '@/shared/ui/EmailVerifyField';
-import { GoogleButton } from '@/shared/ui/GoogleButton';
+import { FieldMessage } from '@/shared/ui/FieldMessage';
+import { GoogleSignInButton } from '@/shared/ui/GoogleSignInButton';
 import { OrDivider } from '@/shared/ui/OrDivider';
 import { PasswordFields } from '@/shared/ui/PasswordFields';
 import { SIGNUP_ERROR } from '../model/errorCodes';
-import { GOOGLE_AUTH_ERROR, type GoogleAuthError } from '../model/googleAuthError';
+import type { GoogleAuthError } from '../model/googleAuthError';
 import type { AccountValues } from '../types';
 import { GoogleAuthErrorMessage } from './GoogleAuthErrorMessage';
 
 interface AccountStepProps {
    account: AccountValues;
    emailVerification: EmailVerificationState;
-   // 구글 인증이 실패해서 돌아왔을 때 주소(/signup?google=...)로 전달된 오류
+   // 구글 가입 화면에서 가입 티켓이 없거나 만료돼 돌아왔을 때 주소(/signup?google=expired)로 전달된 안내
    googleError?: GoogleAuthError;
    onChange: (patch: Partial<AccountValues>) => void;
    onNext: () => void;
@@ -32,9 +33,8 @@ export function AccountStep({
    onChange,
    onNext,
 }: AccountStepProps) {
-   const googleStart = useGoogleAuthStart('signup');
-   // 이동을 시작하는 데 실패한 경우는 "연결 실패"로 보여준다.
-   const shownGoogleError = googleStart.failed ? GOOGLE_AUTH_ERROR.FAILED : googleError;
+   // 이미 가입한 구글 계정이면 여기서 눌러도 바로 로그인되고, 처음 온 계정이면 구글 가입 화면으로 이동한다.
+   const googleAuth = useGoogleAuth();
 
    const canGoNext =
       emailVerification.status === 'verified' &&
@@ -84,8 +84,17 @@ export function AccountStep({
             <OrDivider />
          </div>
 
-         <GoogleButton disabled={googleStart.connecting} onClick={() => googleStart.start()} />
-         {shownGoogleError && <GoogleAuthErrorMessage error={shownGoogleError} />}
+         <GoogleSignInButton
+            onCredential={googleAuth.handleCredential}
+            disabled={googleAuth.busy}
+         />
+         {googleAuth.error ? (
+            <FieldMessage tone="error" className="mt-3 text-center">
+               {googleAuth.error}
+            </FieldMessage>
+         ) : (
+            googleError && <GoogleAuthErrorMessage error={googleError} />
+         )}
       </form>
    );
 }

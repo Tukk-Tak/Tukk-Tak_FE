@@ -11,6 +11,4 @@ export const LOGIN_ERROR = {
    ACCOUNT_LOCKED: 'AUTH-ACCOUNT-LOCKED',
    // 입력값 오류: 이메일 형식, 빈 값, 길이 초과 (400)
    VALIDATION_ERROR: 'COMMON-VALIDATION-ERROR',
-   // TODO: 구글 로그인 API를 연동할 때 서버 코드로 교체한다. 지금은 구글 mock 화면이 쓰는 임시 코드다.
-   GOOGLE_UNREGISTERED: 'GOOGLE_UNREGISTERED',
 } as const;

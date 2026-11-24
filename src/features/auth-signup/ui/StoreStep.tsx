@@ -5,6 +5,7 @@ import type { FormEvent } from 'react';
 import { Button } from '@/shared/ui/Button';
 import { FieldMessage } from '@/shared/ui/FieldMessage';
 import { useToast } from '@/shared/ui/toastContext';
+import { applySignupFailure } from '../model/applySignupFailure';
 import { SIGNUP_ERROR } from '../model/errorCodes';
 import { useSignupSubmit } from '../model/useSignupSubmit';
 import { useStoreForm } from '../model/useStoreForm';
@@ -58,21 +59,16 @@ export function StoreStep({ account, onBack, onEditEmail }: StoreStepProps) {
             toast.show(result.message, { tone: 'error' });
             onEditEmail();
             break;
-         // 중복확인 뒤에 다른 사람이 같은 이름을 썼다. 닉네임 칸에서 다시 확인하게 한다.
-         case SIGNUP_ERROR.NICKNAME_ALREADY_USED:
-            signupSubmit.clearError();
-            form.rejectNickname(submitted, result.message);
-            break;
-         // 사업자 인증을 더 쓸 수 없다. 사업자 칸에 사유를 보여 주고 다시 인증하게 한다.
-         case SIGNUP_ERROR.BUSINESS_TOKEN_INVALID:
-         case SIGNUP_ERROR.BUSINESS_NAME_MISMATCH:
-         case SIGNUP_ERROR.BUSINESS_ALREADY_USED:
-            signupSubmit.clearError();
-            form.failBusiness(submitted, result.message);
-            break;
+         // 닉네임 중복, 사업자 인증 오류는 이메일·구글 가입이 같은 방식으로 처리한다.
          // 그 밖의 오류(입력값 오류 등)는 폼 아래에 서버 message를 그대로 보여 준다. (useSignupSubmit이 이미 보관했다.)
          default:
-            break;
+            applySignupFailure({
+               code: result.code,
+               message: result.message,
+               submitted,
+               form,
+               clearError: signupSubmit.clearError,
+            });
       }
    };
 
