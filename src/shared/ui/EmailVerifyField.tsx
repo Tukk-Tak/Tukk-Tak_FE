@@ -184,11 +184,16 @@ export function EmailCodeField({ email, verification }: EmailCodeFieldProps) {
             <button
                type="button"
                // 확인이 진행 중일 때 재발송하면 인증을 마친 상태가 되돌려질 수 있어 막는다.
-               disabled={verification.sending || verification.verifying}
+               // 서버가 정한 대기 시간(resendAfterSeconds) 안에 다시 보내면 거절하므로, 그동안은 누를 수 없게 하고 남은 시간을 보여 준다.
+               disabled={
+                  verification.sending || verification.verifying || verification.resendWaiting
+               }
                onClick={() => verification.requestCode(email)}
                className="cursor-pointer text-brand-orange disabled:cursor-not-allowed disabled:opacity-50"
             >
-               인증번호 다시 받기
+               {verification.resendWaiting
+                  ? `인증번호 다시 받기 (${verification.resendRemaining}초)`
+                  : '인증번호 다시 받기'}
             </button>
          </div>
       </FormField>

@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Noto_Sans_KR, Outfit } from 'next/font/google';
+import { SessionExpiredNotice } from '@/entities/user/ui/SessionExpiredNotice';
 import { ToastProvider } from '@/shared/ui/ToastProvider';
 
 // 한글 글리프는 unicode-range 단위로 필요한 조각만 내려받는다.
@@ -30,7 +31,10 @@ export default function RootLayout({
    return (
       <html lang="ko" className={`${notoSansKr.variable} ${outfit.variable}`}>
          <body>
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+               {children}
+               <SessionExpiredNotice />
+            </ToastProvider>
          </body>
       </html>
    );
