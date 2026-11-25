@@ -1,5 +1,5 @@
-// TODO: 백엔드가 생기면 이 파일은 삭제한다. 좋아요와 삭제 결과를 브라우저 저장소에 흉내 내서 보관한다.
-// (실제로는 서버가 사용자별로 보관하고, 목록·상세 조회 응답에 이미 반영해서 내려준다.)
+// TODO: 목록(getPosts)과 댓글(createComment) mock이 아직 읽고 있어서 남겨 둔다. 두 API를 연동할 때 이 파일을 삭제한다.
+// 좋아요·삭제는 이제 실제 서버가 처리하므로 이 저장소에 더 이상 기록하지 않는다. (그래서 항상 "없음"이다.)
 const STATE_KEY = 'ttukttak:mock-post-state';
 
 interface MockPostState {
@@ -21,29 +21,10 @@ function read(): MockPostState {
    }
 }
 
-function write(state: MockPostState) {
-   try {
-      window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
-   } catch {
-      // 저장소를 쓸 수 없으면 이 탭의 메모리에서만 유지되지 않는다. (mock이라 무시한다.)
-   }
-}
-
 export function isMockDeleted(id: string): boolean {
    return read().deletedIds.includes(id);
 }
 
 export function isMockLiked(id: string): boolean {
    return read().likedIds.includes(id);
-}
-
-export function markMockDeleted(id: string) {
-   const state = read();
-   if (!state.deletedIds.includes(id)) write({ ...state, deletedIds: [...state.deletedIds, id] });
-}
-
-export function setMockLiked(id: string, liked: boolean) {
-   const state = read();
-   const others = state.likedIds.filter((likedId) => likedId !== id);
-   write({ ...state, likedIds: liked ? [...others, id] : others });
 }

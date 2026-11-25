@@ -1,51 +1,51 @@
-import { readMockSession } from '@/entities/user/api/mockSession';
-import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import { POST_ERROR, type MockMode, type PostDetail } from '../types';
-import { isMockDeleted, isMockLiked } from './mockPostState';
-import { MOCK_POSTS } from './mockPosts';
+import { ApiError, apiFetch } from '@/shared/lib/apiClient';
+import type { PostDetail } from '../types';
 
-// 상세 화면에 보여 줄 본문. 실제로는 서버가 저장한 글 내용이다. (mock은 글마다 같은 모양의 문단을 만든다.)
-function makeContent(title: string, authorNickname: string): string {
-   return [
-      `${authorNickname}의 가게 이야기를 소개해요. "${title}"`,
-      '매일 아침 직접 준비한 재료로 정성껏 만들고, 누구나 편하게 머물 수 있는 공간이 되길 바랍니다.',
-      '근처에 오실 일이 있다면 따뜻한 한 끼 드시러 놀러 오세요.',
-   ].join('\n');
+// 서버 응답(data) 중 화면이 쓰는 것. 글 id는 숫자로 온다.
+interface PostDetailData {
+   id: number | string;
+   title: string;
+   imageUrl?: string | null;
+   nickname: string;
+   content: string;
+   tags?: string[];
+   createdAt: string;
+   likeCount?: number;
+   commentCount?: number;
+   liked?: boolean;
+   bookmarked?: boolean;
 }
 
-// TODO: 백엔드 API가 정해지면 apiFetch 호출로 교체한다. 지금은 UI 확인용 mock이다.
-// 보는 사람에 따라 달라지는 값(liked, canDelete)은 서버가 계산해서 내려준다. mock은 로그인 정보(세션)의 닉네임으로 흉내 낸다.
-// mock 규칙: 목록의 글 id(post-1 ~ post-26)만 있고, 삭제한 글과 없는 id는 "없는 글" 오류이다.
-//            ?mock=notfound 는 없는 글, ?mock=error 는 불러오기 실패, ?mock=slow 는 느린 응답이다.
-export async function getPost(id: string, mock?: MockMode): Promise<PostDetail> {
-   await mockDelay(mock === 'slow' ? 3000 : 500);
-
-   if (mock === 'error') {
-      throw new ApiError(
-         POST_ERROR.LOAD_FAILED,
-         '게시물을 불러오지 못했어요. 잠시 후 다시 시도해주세요',
-      );
+function toPostDetail(data: PostDetailData | null | undefined): PostDetail {
+   if (
+      !data ||
+      typeof data.title !== 'string' ||
+      typeof data.content !== 'string' ||
+      typeof data.nickname !== 'string'
+   ) {
+      throw new ApiError('UNKNOWN', '게시물을 불러오지 못했어요. 잠시 후 다시 시도해주세요');
    }
-
-   const post = MOCK_POSTS.find((item) => item.id === id);
-   if (mock === 'notfound' || !post || isMockDeleted(id)) {
-      throw new ApiError(POST_ERROR.NOT_FOUND, '게시물을 찾을 수 없어요');
-   }
-
-   const viewer = readMockSession()?.nickname ?? null;
-   const liked = viewer !== null && isMockLiked(id);
 
    return {
-      id: post.id,
-      title: post.title,
-      content: makeContent(post.title, post.authorNickname),
-      tags: post.tags,
-      authorNickname: post.authorNickname,
-      createdAt: post.createdAt,
-      likeCount: post.likeCount + (liked ? 1 : 0),
-      liked,
-      canDelete: viewer !== null && viewer === post.authorNickname,
-      thumbnailUrl: post.thumbnailUrl,
+      id: String(data.id),
+      title: data.title,
+      content: data.content,
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      authorNickname: data.nickname,
+      // 서버는 "2026-10-24T09:30:00"처럼 시각까지 주는데, 화면은 날짜(YYYY-MM-DD)만 읽는다.
+      createdAt: typeof data.createdAt === 'string' ? data.createdAt.slice(0, 10) : '',
+      likeCount: data.likeCount ?? 0,
+      commentCount: data.commentCount ?? 0,
+      liked: data.liked === true,
+      bookmarked: data.bookmarked === true,
+      thumbnailUrl: data.imageUrl || null,
    };
+}
+
+// 게시물 상세 조회 GET /post/detail/{postId}
+// 로그인했다면 토큰이 함께 가서(apiFetch가 붙인다) liked·bookmarked를 그 사용자 기준으로 돌려주고, 로그인하지 않았으면 둘 다 false다.
+// 이 화면은 로그인하지 않아도 볼 수 있어서 인증 오류는 나지 않는다. 없거나 삭제된(소프트 딜리트) 글은 404이다.
+export async function getPost(id: string): Promise<PostDetail> {
+   const data = await apiFetch<PostDetailData | null>(`/post/detail/${encodeURIComponent(id)}`);
+   return toPostDetail(data);
 }

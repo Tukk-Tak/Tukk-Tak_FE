@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ApiError, toApiError } from '@/shared/lib/apiClient';
 import { getPost } from '../api/getPost';
-import { POST_ERROR, type MockMode, type PostDetail } from '../types';
+import type { PostDetail } from '../types';
 
 type PostDetailState =
    | { status: 'loading' }
@@ -18,23 +18,24 @@ interface Settled {
 
 // 게시물 하나를 불러온다. 없는 글(not-found)과 불러오기 실패(error)를 나눠서 알려 주고, 다시 시도할 수 있다.
 // 글 id가 바뀌어 요청이 겹쳐도 가장 마지막 요청의 결과만 반영한다.
-export function usePostDetail(postId: string, mock?: MockMode) {
+export function usePostDetail(postId: string) {
    const [attempt, setAttempt] = useState(0);
    const [settled, setSettled] = useState<Settled | null>(null);
 
-   const key = JSON.stringify([postId, mock, attempt]);
+   const key = JSON.stringify([postId, attempt]);
 
    useEffect(() => {
       let ignore = false;
 
-      getPost(postId, mock)
+      getPost(postId)
          .then((post) => {
             if (!ignore) setSettled({ key, outcome: { post } });
          })
          .catch((error: unknown) => {
             if (ignore) return;
             const apiError = toApiError(error);
-            const notFound = error instanceof ApiError && error.code === POST_ERROR.NOT_FOUND;
+            // 없거나 삭제된 글은 서버가 404로 알려 준다. (에러 코드는 정해진 값이 없어서 상태로 구분한다.)
+            const notFound = error instanceof ApiError && error.status === 404;
             setSettled({
                key,
                outcome: notFound ? { notFound: true } : { message: apiError.message },
