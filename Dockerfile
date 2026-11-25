@@ -18,6 +18,10 @@ COPY . .
 ARG API_URL
 ENV NEXT_PUBLIC_API_URL=$API_URL
 
+# 구글 로그인에 쓰는 OAuth 클라이언트 ID. 비어 있으면 구글 로그인 버튼이 비활성으로 보인다.
+ARG GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+
 RUN npm run build
 
 # ==========================================

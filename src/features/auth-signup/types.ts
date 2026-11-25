@@ -43,7 +43,7 @@ export interface SignupPayloadBase {
 }
 
 // 이메일 가입은 이메일 인증 때 받은 토큰(emailToken)과 비밀번호를 보낸다. (이메일 주소 자체는 보내지 않는다.)
-// 구글 가입은 이메일과 비밀번호 대신, 구글 인증 때 서버에 만들어진 가입 대기 정보를 쓴다.
+// 구글 가입은 이메일과 비밀번호 대신, 구글 로그인 때 서버가 준 가입 티켓(signupTicket)을 보낸다.
 export type SignupPayload =
    | (SignupPayloadBase & {
         provider: 'EMAIL';
@@ -51,4 +51,4 @@ export type SignupPayload =
         password: string;
         passwordConfirm: string;
      })
-   | (SignupPayloadBase & { provider: 'GOOGLE' });
+   | (SignupPayloadBase & { provider: 'GOOGLE'; signupTicket: string });

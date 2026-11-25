@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react';
+import type { User } from '@/entities/user/types';
 import { toApiError } from '@/shared/lib/apiClient';
 import { useSingleFlight } from '@/shared/lib/useSingleFlight';
 import { signup } from '../api/signup';
 import type { SignupPayload } from '../types';
 
 // ok: 가입 성공 / !ok: 실패(서버 에러 코드와 문구) / null: 가입 요청이 이미 진행 중이어서 무시됨
-export type SignupResult = { ok: true } | { ok: false; code: string; message: string } | null;
+// user는 가입과 함께 로그인까지 된 경우(구글 가입)에만 있고, 이메일 가입은 null이다.
+export type SignupResult =
+   { ok: true; user: User | null } | { ok: false; code: string; message: string } | null;
 
 export function useSignupSubmit() {
    const [error, setError] = useState<string | null>(null);
@@ -19,9 +22,9 @@ export function useSignupSubmit() {
          setError(null);
          const result = await run<SignupResult>(async () => {
             try {
-               await signup(payload);
+               const user = await signup(payload);
                setCompleted(true);
-               return { ok: true };
+               return { ok: true, user };
             } catch (caught) {
                const { code, message } = toApiError(caught);
                setError(message);

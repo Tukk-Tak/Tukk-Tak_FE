@@ -27,6 +27,7 @@ jobs:
               file: ./Dockerfile
               build-args: |
                  API_URL=${{ secrets.API_URL }}
+                 GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
               push: true
               tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.APP_NAME }}:latest
 
