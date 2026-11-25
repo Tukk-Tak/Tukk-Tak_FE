@@ -37,8 +37,15 @@ function BackToList() {
 // 닉네임은 가입할 때 중복이 막히는 값이라 본인 확인에 쓸 수 있고, 실제 삭제 권한은 서버가 다시 확인한다.
 // 관리자도 삭제할 수 있지만, 프론트는 아직 관리자 여부(role)를 알지 못해서 관리자용 삭제 버튼은 관리자 화면 작업 때 함께 다룬다.
 export function PostDetail({ postId }: { postId: string }) {
-   const detail = usePostDetail(postId);
    const session = useSession();
+   // 지금 보는 사람. 세션을 확인하는 동안은 null이다. 사용자가 바뀌면 좋아요·북마크 표시를 맞추려고 상세를 다시 받는다.
+   const viewer =
+      session.status === 'ready'
+         ? session.user
+            ? `user:${session.user.nickname}`
+            : 'guest'
+         : null;
+   const detail = usePostDetail(postId, viewer);
 
    return (
       <section className={CONTAINER_CLASS}>
@@ -76,15 +83,18 @@ export function PostDetail({ postId }: { postId: string }) {
                   />
 
                   <div className="mt-4 flex flex-wrap items-center gap-x-4 border-b border-brand-line pb-3">
-                     {/* 두 버튼은 같은 부모 안에 있으므로 key가 서로 달라야 한다. (글이 바뀌면 각각 새로 만들려는 것이다.) */}
+                     {/* 두 버튼은 같은 부모 안에 있으므로 key가 서로 달라야 한다.
+                         글이 바뀌거나 조용한 재조회로 새 값이 들어오면(version) 각각 새 값으로 다시 시작한다.
+                         사용자가 바뀌어 상세를 다시 받을 때는 스켈레톤으로 바뀌면서 버튼이 새로 만들어진다. */}
                      <LikeButton
-                        key={`like-${detail.post.id}`}
+                        key={`like-${detail.post.id}-${detail.version}`}
                         postId={detail.post.id}
                         initialLiked={detail.post.liked}
                         initialCount={detail.post.likeCount}
+                        onOutOfSync={detail.refresh}
                      />
                      <BookmarkButton
-                        key={`bookmark-${detail.post.id}`}
+                        key={`bookmark-${detail.post.id}-${detail.version}`}
                         postId={detail.post.id}
                         initialBookmarked={detail.post.bookmarked}
                      />

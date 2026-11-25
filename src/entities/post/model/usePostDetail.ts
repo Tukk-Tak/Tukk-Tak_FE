@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, toApiError } from '@/shared/lib/apiClient';
 import { getPost } from '../api/getPost';
 import type { PostDetail } from '../types';
@@ -18,11 +18,32 @@ interface Settled {
 
 // 게시물 하나를 불러온다. 없는 글(not-found)과 불러오기 실패(error)를 나눠서 알려 주고, 다시 시도할 수 있다.
 // 글 id가 바뀌어 요청이 겹쳐도 가장 마지막 요청의 결과만 반영한다.
-export function usePostDetail(postId: string) {
+//
+// viewer는 지금 보는 사람을 구분하는 값이다. 세션을 아직 확인하지 못했으면 null이다.
+// 응답의 liked·bookmarked는 요청한 사용자 기준이라, 같은 화면에서 로그인·로그아웃하거나 다른 탭에서 로그인이 바뀌면 낡은 값이 된다.
+// 그래서 세션 확인이 끝난 뒤 viewer가 바뀌면 상세를 다시 받는다. (처음 세션 확인이 끝났을 때는 다시 받지 않는다.)
+// 상세는 로그인하지 않아도 볼 수 있으므로, 세션 확인을 기다리지 않고 바로 요청한다.
+export function usePostDetail(postId: string, viewer: string | null) {
    const [attempt, setAttempt] = useState(0);
+   // 세션 확인이 끝난 뒤 viewer가 바뀐 횟수. 올라가면 상세를 다시 받는다.
+   const [viewerChanges, setViewerChanges] = useState(0);
+   // 조용한 재조회(refresh)로 새 값을 반영한 횟수. 화면은 이 값을 버튼의 key에 넣어, 새 값으로 다시 시작하게 한다.
+   const [version, setVersion] = useState(0);
    const [settled, setSettled] = useState<Settled | null>(null);
+   const lastViewerRef = useRef<string | null>(null);
 
-   const key = JSON.stringify([postId, attempt]);
+   useEffect(() => {
+      if (viewer === null) return;
+      const last = lastViewerRef.current;
+      lastViewerRef.current = viewer;
+      if (last !== null && last !== viewer) setViewerChanges((count) => count + 1);
+   }, [viewer]);
+
+   const key = JSON.stringify([postId, attempt, viewerChanges]);
+   const keyRef = useRef(key);
+   useEffect(() => {
+      keyRef.current = key;
+   });
 
    useEffect(() => {
       let ignore = false;
@@ -51,6 +72,21 @@ export function usePostDetail(postId: string) {
 
    const retry = useCallback(() => setAttempt((count) => count + 1), []);
 
+   // 화면을 스켈레톤으로 바꾸지 않고 조용히 다시 받아서 값만 갱신한다. (좋아요 개수가 서버와 어긋났을 가능성이 있을 때 쓴다.)
+   // 실패해도 지금 화면을 그대로 두고, 받는 사이에 글이나 사용자가 바뀌었다면 그 결과는 버린다.
+   const refresh = useCallback(() => {
+      const requestedKey = keyRef.current;
+      getPost(postId)
+         .then((post) => {
+            if (keyRef.current !== requestedKey) return;
+            setSettled({ key: requestedKey, outcome: { post } });
+            setVersion((count) => count + 1);
+         })
+         .catch(() => {
+            // 조용한 재조회라서 실패해도 알리지 않는다.
+         });
+   }, [postId]);
+
    let state: PostDetailState = { status: 'loading' };
    if (settled && settled.key === key) {
       const { outcome } = settled;
@@ -59,5 +95,5 @@ export function usePostDetail(postId: string) {
       else state = { status: 'error', message: outcome.message };
    }
 
-   return { ...state, retry };
+   return { ...state, retry, refresh, version };
 }
