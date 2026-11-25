@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { deletePost } from '@/entities/post';
+import { isUnauthorizedError, toApiError } from '@/shared/lib/apiClient';
 import { ConfirmModal } from '@/shared/ui/ConfirmModal';
 import { useToast } from '@/shared/ui/toastContext';
 
@@ -11,7 +12,8 @@ import { useToast } from '@/shared/ui/toastContext';
 const COMMUNITY_PATH = '/community';
 
 // 게시물 삭제 버튼. 누르면 확인 모달을 띄우고, 확인하면 삭제한 뒤 목록으로 돌아간다.
-// 이 버튼을 보여 줄지(작성자인지)는 서버가 내려준 canDelete로 호출하는 쪽이 정하고, 실제 삭제 권한은 서버가 다시 확인한다.
+// 이 버튼을 보여 줄지(작성자인지)는 호출하는 쪽이 정하고, 실제 삭제 권한은 서버가 다시 확인한다.
+// 실패하면(권한 없음 403, 이미 없는 글 404 등) 서버가 준 문구를 그대로 토스트로 보여 준다.
 export function PostDeleteButton({ postId }: { postId: string }) {
    const router = useRouter();
    const toast = useToast();
@@ -31,10 +33,11 @@ export function PostDeleteButton({ postId }: { postId: string }) {
          toast.show('게시물을 삭제했어요', { tone: 'success' });
          // 삭제한 글의 상세로 뒤로 가기가 돌아오지 않게 기록을 바꾼다.
          router.replace(COMMUNITY_PATH);
-      } catch {
+      } catch (error) {
          busyRef.current = false;
          setDeleting(false);
-         toast.show('게시물을 삭제하지 못했어요. 잠시 후 다시 시도해주세요', { tone: 'error' });
+         // 로그인 시간이 지난 경우는 apiClient가 이미 안내했다. 그 밖에는 서버가 준 문구를 그대로 보여 준다.
+         if (!isUnauthorizedError(error)) toast.show(toApiError(error).message, { tone: 'error' });
       }
    };
 

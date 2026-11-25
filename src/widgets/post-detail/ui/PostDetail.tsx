@@ -1,9 +1,10 @@
 'use client';
 
-import { ArrowLeft, Bookmark } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { PostThumbnail, usePostDetail, type MockMode } from '@/entities/post';
+import { PostThumbnail, usePostDetail } from '@/entities/post';
+import { useSession } from '@/entities/user/model/useSession';
+import { BookmarkButton } from '@/features/community-bookmark';
 import { CommentCard } from '@/features/community-comment';
 import { LikeButton } from '@/features/community-like';
 import { PostDeleteButton } from '@/features/community-post-delete';
@@ -18,7 +19,6 @@ const CONTAINER_CLASS = 'mx-auto w-full max-w-[75rem] px-[3%] py-8 md:py-10';
 const DETAIL_GRID_CLASS = 'grid gap-8 lg:grid-cols-[minmax(0,1fr)_23rem]';
 // 댓글 카드가 "목록으로" 줄 아래, 사진과 같은 높이에서 시작하도록 맞춘 위쪽 여백 (링크 줄 높이 + 사진 위 간격)
 const COMMENT_OFFSET_CLASS = 'lg:pt-12';
-const MOCK_MODES: MockMode[] = ['error', 'slow', 'notfound'];
 
 function BackToList() {
    return (
@@ -32,24 +32,20 @@ function BackToList() {
    );
 }
 
-// 주소의 글 id를 읽는 동안(Suspense) 보여 주는 화면.
-export function PostDetailFallback() {
-   return (
-      <section className={CONTAINER_CLASS}>
-         <PostDetailSkeleton />
-      </section>
-   );
-}
-
-// 게시물 상세(본문). 좋아요·공유·삭제 버튼과 태그를 보여 주고, 삭제 버튼은 서버가 알려 준 canDelete일 때만 나온다.
+// 게시물 상세(본문). 좋아요·북마크·공유·삭제 버튼과 태그를 보여 준다.
+// 삭제 버튼은 로그인한 사용자의 닉네임이 글 작성자와 같을 때만 나온다. (서버가 삭제 가능 여부를 따로 알려 주지 않는다.)
+// 닉네임은 가입할 때 중복이 막히는 값이라 본인 확인에 쓸 수 있고, 실제 삭제 권한은 서버가 다시 확인한다.
+// 관리자도 삭제할 수 있지만, 프론트는 아직 관리자 여부(role)를 알지 못해서 관리자용 삭제 버튼은 관리자 화면 작업 때 함께 다룬다.
 export function PostDetail({ postId }: { postId: string }) {
-   const searchParams = useSearchParams();
-   // TODO: mock 동작 확인용 스위치이다. 백엔드 연동 때 삭제한다. (개발 환경에서만 주소의 ?mock= 로 켠다.)
-   const mock =
-      process.env.NODE_ENV === 'production'
-         ? undefined
-         : MOCK_MODES.find((mode) => mode === searchParams.get('mock'));
-   const detail = usePostDetail(postId, mock);
+   const session = useSession();
+   // 지금 보는 사람. 세션을 확인하는 동안은 null이다. 사용자가 바뀌면 좋아요·북마크 표시를 맞추려고 상세를 다시 받는다.
+   const viewer =
+      session.status === 'ready'
+         ? session.user
+            ? `user:${session.user.nickname}`
+            : 'guest'
+         : null;
+   const detail = usePostDetail(postId, viewer);
 
    return (
       <section className={CONTAINER_CLASS}>
@@ -87,17 +83,21 @@ export function PostDetail({ postId }: { postId: string }) {
                   />
 
                   <div className="mt-4 flex flex-wrap items-center gap-x-4 border-b border-brand-line pb-3">
+                     {/* 두 버튼은 같은 부모 안에 있으므로 key가 서로 달라야 한다.
+                         글이 바뀌거나 조용한 재조회로 새 값이 들어오면(version) 각각 새 값으로 다시 시작한다.
+                         사용자가 바뀌어 상세를 다시 받을 때는 스켈레톤으로 바뀌면서 버튼이 새로 만들어진다. */}
                      <LikeButton
-                        key={detail.post.id}
+                        key={`like-${detail.post.id}-${detail.version}`}
                         postId={detail.post.id}
                         initialLiked={detail.post.liked}
                         initialCount={detail.post.likeCount}
+                        onOutOfSync={detail.refresh}
                      />
-                     {/* TODO: 북마크는 지금 표시만 한다. 마이페이지의 북마크 목록과 함께 누르는 기능을 구현한다. (그때 button으로 바꾼다.) */}
-                     <span className="flex items-center gap-2 px-2 py-1.5 text-sm font-semibold text-black/60">
-                        <Bookmark aria-hidden className="size-5" />
-                        북마크
-                     </span>
+                     <BookmarkButton
+                        key={`bookmark-${detail.post.id}-${detail.version}`}
+                        postId={detail.post.id}
+                        initialBookmarked={detail.post.bookmarked}
+                     />
                      <ShareButton />
                   </div>
 
@@ -105,7 +105,9 @@ export function PostDetail({ postId }: { postId: string }) {
                      <h1 className="text-2xl font-bold wrap-break-word text-black">
                         {detail.post.title}
                      </h1>
-                     {detail.post.canDelete && <PostDeleteButton postId={detail.post.id} />}
+                     {session.user?.nickname === detail.post.authorNickname && (
+                        <PostDeleteButton postId={detail.post.id} />
+                     )}
                   </div>
                   <p className="mt-2 text-xs text-black/50">
                      {detail.post.authorNickname}
