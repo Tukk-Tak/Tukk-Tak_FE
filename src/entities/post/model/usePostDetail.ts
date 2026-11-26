@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, toApiError } from '@/shared/lib/apiClient';
+import { getAccessToken } from '@/shared/lib/authToken';
 import { getPost } from '../api/getPost';
 import type { PostDetail } from '../types';
 
@@ -21,8 +22,10 @@ interface Settled {
 //
 // viewer는 지금 보는 사람을 구분하는 값이다. 세션을 아직 확인하지 못했으면 null이다.
 // 응답의 liked·bookmarked는 요청한 사용자 기준이라, 같은 화면에서 로그인·로그아웃하거나 다른 탭에서 로그인이 바뀌면 낡은 값이 된다.
-// 그래서 세션 확인이 끝난 뒤 viewer가 바뀌면 상세를 다시 받는다. (처음 세션 확인이 끝났을 때는 다시 받지 않는다.)
+// 그래서 세션 확인이 끝난 뒤 viewer가 바뀌면 상세를 다시 받는다.
 // 상세는 로그인하지 않아도 볼 수 있으므로, 세션 확인을 기다리지 않고 바로 요청한다.
+// 처음 세션 확인이 끝났을 때는, 이미 보낸 요청이 확인된 결과와 같은 쪽(토큰을 붙였는지)이면 다시 받지 않고,
+// 어긋났을 때만 다시 받는다. (세션을 확인하는 사이에 다른 탭에서 로그아웃했거나 토큰이 만료돼 로그인이 풀린 경우)
 export function usePostDetail(postId: string, viewer: string | null) {
    const [attempt, setAttempt] = useState(0);
    // 세션 확인이 끝난 뒤 viewer가 바뀐 횟수. 올라가면 상세를 다시 받는다.
@@ -31,12 +34,17 @@ export function usePostDetail(postId: string, viewer: string | null) {
    const [version, setVersion] = useState(0);
    const [settled, setSettled] = useState<Settled | null>(null);
    const lastViewerRef = useRef<string | null>(null);
+   // 가장 최근 요청을 로그인 토큰을 붙여서 보냈는지. (아직 요청을 보내기 전이면 null)
+   const sentWithTokenRef = useRef<boolean | null>(null);
 
    useEffect(() => {
       if (viewer === null) return;
       const last = lastViewerRef.current;
       lastViewerRef.current = viewer;
-      if (last !== null && last !== viewer) setViewerChanges((count) => count + 1);
+      const sent = sentWithTokenRef.current;
+      const changed =
+         last !== null ? last !== viewer : sent !== null && sent !== (viewer !== 'guest');
+      if (changed) setViewerChanges((count) => count + 1);
    }, [viewer]);
 
    const key = JSON.stringify([postId, attempt, viewerChanges]);
@@ -48,6 +56,8 @@ export function usePostDetail(postId: string, viewer: string | null) {
    useEffect(() => {
       let ignore = false;
 
+      // apiFetch가 요청을 보내는 순간 읽는 것과 같은 토큰으로 판단한다.
+      sentWithTokenRef.current = getAccessToken() !== null;
       getPost(postId)
          .then((post) => {
             if (!ignore) setSettled({ key, outcome: { post } });

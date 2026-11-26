@@ -14,6 +14,8 @@ interface BookmarkButtonProps {
    initialBookmarked: boolean;
    // 목록의 카드·행에 놓는 작은 모양. 글자 없이 아이콘만 보이고, 카드 전체를 덮는 링크보다 위에 놓여 눌린다.
    compact?: boolean;
+   // 서버가 북마크 결과를 확정해 알려 줄 때 불린다. 버튼이 다시 만들어져도(예: 목록의 보기 전환) 결과를 잃지 않게, 호출하는 쪽이 받아 둔다.
+   onChange?: (bookmarked: boolean) => void;
 }
 
 // 북마크 버튼. 좋아요 버튼과 같은 방식이다. 누르면 바로 바뀌고(낙관적 갱신), 서버 요청이 실패하면 되돌리고 서버 문구로 알려 준다.
@@ -23,6 +25,7 @@ export function BookmarkButton({
    postId,
    initialBookmarked,
    compact = false,
+   onChange,
 }: BookmarkButtonProps) {
    const session = useSession();
    const toast = useToast();
@@ -46,7 +49,9 @@ export function BookmarkButton({
       setBookmarked(next);
       try {
          // 서버 결과가 예상과 다르면(다른 곳에서 이미 바꿔 둔 경우) 서버가 알려 준 상태에 맞춘다.
-         setBookmarked(await togglePostBookmark(postId));
+         const result = await togglePostBookmark(postId);
+         setBookmarked(result);
+         onChange?.(result);
       } catch (error) {
          setBookmarked(before);
          // 로그인 시간이 지난 경우는 apiClient가 이미 안내했다. 그 밖에는 서버가 준 문구를 그대로 보여 준다.

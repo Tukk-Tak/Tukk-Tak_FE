@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
    PostCard,
    PostRow,
    usePosts,
    type GetPostsParams,
+   type PostPage,
    type PostSummary,
    type TagHighlight,
 } from '@/entities/post';
@@ -106,13 +107,27 @@ export function CommunityList() {
 
    const searchByTag = (tag: string) => query.search(`#${tag}`);
 
-   // 글마다 북마크 버튼을 놓는다. 서버가 내려준 처음 상태로 시작하고 이후는 버튼이 직접 들고 있는다.
-   // 서버 값이 바뀌어(목록을 다시 받아) 들어오면 key가 달라져 새 값으로 다시 시작한다.
+   // 글마다 북마크 버튼을 놓는다. 버튼은 보기 전환(카드↔목록) 때 새로 만들어지므로, 사용자가 누른 결과를 여기서 받아 둔다.
+   // 받아 둔 결과는 그 결과를 얻은 목록 데이터에만 적용한다. 목록을 다시 받으면(검색·페이지·로그인 변경 등) 서버 값을 따른다.
+   const currentData = posts.status === 'success' ? posts.data : null;
+   const [bookmarkOverrides, setBookmarkOverrides] = useState<{
+      source: PostPage | null;
+      map: Record<string, boolean>;
+   }>({ source: null, map: {} });
+   const overrideMap = bookmarkOverrides.source === currentData ? bookmarkOverrides.map : {};
+
    const bookmarkButton = (post: PostSummary) => (
       <BookmarkButton
+         // 서버 값이 바뀌어 들어오면 key가 달라져 새 값으로 다시 시작한다.
          key={`${post.id}:${post.bookmarked}`}
          postId={post.id}
-         initialBookmarked={post.bookmarked}
+         initialBookmarked={overrideMap[post.id] ?? post.bookmarked}
+         onChange={(bookmarked) =>
+            setBookmarkOverrides((prev) => ({
+               source: currentData,
+               map: { ...(prev.source === currentData ? prev.map : {}), [post.id]: bookmarked },
+            }))
+         }
          compact
       />
    );
