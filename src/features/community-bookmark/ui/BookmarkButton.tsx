@@ -12,12 +12,18 @@ interface BookmarkButtonProps {
    postId: string;
    // 서버가 내려준 처음 상태. 이후에는 이 버튼이 직접 들고 있는다. (글이 바뀌면 key로 새로 만든다.)
    initialBookmarked: boolean;
+   // 목록의 카드·행에 놓는 작은 모양. 글자 없이 아이콘만 보이고, 카드 전체를 덮는 링크보다 위에 놓여 눌린다.
+   compact?: boolean;
 }
 
 // 북마크 버튼. 좋아요 버튼과 같은 방식이다. 누르면 바로 바뀌고(낙관적 갱신), 서버 요청이 실패하면 되돌리고 서버 문구로 알려 준다.
 // 서버는 토글로 처리해서 "원하는 상태"를 보낼 수 없고 결과(북마크했는지)만 돌려준다.
 // 로그인하지 않았으면 눌렀을 때 로그인 안내를 띄운다. (북마크한 글은 마이페이지의 북마크 목록에서 모아 본다.)
-export function BookmarkButton({ postId, initialBookmarked }: BookmarkButtonProps) {
+export function BookmarkButton({
+   postId,
+   initialBookmarked,
+   compact = false,
+}: BookmarkButtonProps) {
    const session = useSession();
    const toast = useToast();
    const [bookmarked, setBookmarked] = useState(initialBookmarked);
@@ -55,13 +61,23 @@ export function BookmarkButton({ postId, initialBookmarked }: BookmarkButtonProp
          <button
             type="button"
             aria-pressed={bookmarked}
+            aria-label={compact ? '북마크' : undefined}
             onClick={toggle}
-            className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold hover:bg-black/5 ${
-               bookmarked ? 'text-brand-orange' : 'text-black/60'
-            }`}
+            className={
+               compact
+                  ? `relative z-10 -m-1.5 flex cursor-pointer items-center rounded-lg p-1.5 hover:bg-black/5 ${
+                       bookmarked ? 'text-brand-orange' : 'text-black/40'
+                    }`
+                  : `flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold hover:bg-black/5 ${
+                       bookmarked ? 'text-brand-orange' : 'text-black/60'
+                    }`
+            }
          >
-            <Bookmark aria-hidden className={`size-5 ${bookmarked ? 'fill-brand-orange' : ''}`} />
-            북마크
+            <Bookmark
+               aria-hidden
+               className={`${compact ? 'size-4' : 'size-5'} ${bookmarked ? 'fill-brand-orange' : ''}`}
+            />
+            {!compact && '북마크'}
          </button>
 
          {loginPrompt && <LoginRequiredModal onCancel={() => setLoginPrompt(false)} />}

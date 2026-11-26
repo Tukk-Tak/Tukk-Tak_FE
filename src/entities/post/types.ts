@@ -9,30 +9,25 @@ export interface PostSummary {
    authorNickname: string;
    likeCount: number;
    commentCount: number;
-   // 작성일(YYYY-MM-DD)
-   createdAt: string;
+   // 지금 보는 사람이 좋아요·북마크를 눌렀는지. (로그인하지 않았으면 항상 false) 목록 응답에는 작성일이 없다.
+   liked: boolean;
+   bookmarked: boolean;
    // 대표 이미지. 없으면 색 블록과 아이콘으로 대신한다.
    thumbnailUrl: string | null;
 }
 
-// 목록 조회 조건. text(제목·닉네임·태그 부분 일치)와 tag(태그 정확 일치)는 함께 쓰지 않는다.
+// 목록 조회 조건. keyword는 사용자가 입력한 검색어 그대로이다. ('#'으로 시작하면 서버가 태그 검색으로 처리한다.)
 export interface GetPostsParams {
-   text?: string;
-   tag?: string;
+   keyword?: string;
    sort: PostSort;
    page: number;
    pageSize: number;
-   // TODO: mock 동작 확인용 스위치이다. 백엔드 연동 때 삭제한다. (개발 환경에서만 주소의 ?mock= 로 켠다.)
-   mock?: MockMode;
 }
-
-// empty: 글 없음(목록) / error: 불러오기 실패 / slow: 느린 응답 / notfound: 없는 글(상세)
-export type MockMode = 'empty' | 'error' | 'slow' | 'notfound';
 
 export interface PostPage {
    posts: PostSummary[];
    totalCount: number;
-   // 실제로 돌려준 페이지. 요청한 페이지가 범위를 넘으면 마지막 페이지로 맞춘다.
+   // 서버가 돌려준 페이지. 요청한 페이지가 범위를 넘으면 글이 없는 빈 페이지가 온다. (totalPages는 글이 없으면 0이다.)
    page: number;
    totalPages: number;
 }
@@ -56,10 +51,9 @@ export interface PostDetail {
    thumbnailUrl: string | null;
 }
 
-// 카드·목록 행이 일치한 태그를 강조하는 데 쓴다. exact가 true면 태그 정확 일치(태그 검색), false면 부분 일치(글자 검색)이다.
+// 카드·목록 행이 일치한 태그를 강조하는 데 쓴다. 서버가 태그를 부분 일치로 찾으므로 강조도 부분 일치로 한다.
 export interface TagHighlight {
    value: string;
-   exact: boolean;
 }
 
 // 에러코드가 정해지면 이 값을 맞춘다.

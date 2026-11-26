@@ -6,9 +6,11 @@ import {
    PostRow,
    usePosts,
    type GetPostsParams,
+   type PostSummary,
    type TagHighlight,
 } from '@/entities/post';
 import { useSession } from '@/entities/user/model/useSession';
+import { BookmarkButton } from '@/features/community-bookmark';
 import { SearchBar, SortSelect, useCommunityQuery, ViewToggle } from '@/features/community-search';
 import { Button } from '@/shared/ui/Button';
 import { ButtonLink } from '@/shared/ui/ButtonLink';
@@ -61,27 +63,41 @@ export function CommunityList() {
 
    const { parsed } = query;
    const params: GetPostsParams = {
-      text: parsed.kind === 'text' ? parsed.text : undefined,
-      tag: parsed.kind === 'tag' ? parsed.tag : undefined,
+      // 태그 검색은 '#'을 붙여 보낸다. 서버가 #으로 시작하면 태그에서만 찾는다.
+      keyword:
+         parsed.kind === 'tag'
+            ? `#${parsed.tag}`
+            : parsed.kind === 'text'
+              ? parsed.text
+              : undefined,
       sort: query.sort,
       page: query.page,
       pageSize: PAGE_SIZE,
-      mock: query.mock,
    };
-   const posts = usePosts(params);
+   // 지금 보는 사람. 세션을 확인하는 동안은 null이다. 사용자가 바뀌면 좋아요·북마크 표시를 맞추려고 목록을 다시 받는다.
+   const viewer =
+      session.status === 'ready'
+         ? session.user
+            ? `user:${session.user.nickname}`
+            : 'guest'
+         : null;
+   const posts = usePosts(params, viewer);
 
-   // 요청한 페이지가 범위를 넘으면 서버가 마지막 페이지를 돌려준다. 주소도 같은 페이지로 맞춘다.
-   const loadedPage = posts.status === 'success' ? posts.data.page : null;
+   // 서버는 범위를 넘은 페이지를 마지막 페이지로 맞춰 주지 않고 빈 목록만 돌려준다.
+   // (글이 줄었거나 주소의 page를 직접 고친 경우) 글이 있는데 요청한 페이지가 마지막 페이지보다 크면 마지막 페이지로 옮기고, 주소도 맞춘다.
    const { page: requestedPage, syncPage } = query;
+   const lastPage =
+      posts.status === 'success' && posts.data.totalPages > 0 ? posts.data.totalPages : null;
+   const outOfRange = lastPage !== null && requestedPage > lastPage;
    useEffect(() => {
-      if (loadedPage !== null && loadedPage !== requestedPage) syncPage(loadedPage);
-   }, [loadedPage, requestedPage, syncPage]);
+      if (outOfRange && lastPage !== null) syncPage(lastPage);
+   }, [outOfRange, lastPage, syncPage]);
 
    const highlight: TagHighlight | undefined =
       parsed.kind === 'tag'
-         ? { value: parsed.tag, exact: true }
+         ? { value: parsed.tag }
          : parsed.kind === 'text'
-           ? { value: parsed.text, exact: false }
+           ? { value: parsed.text }
            : undefined;
 
    const searching = parsed.kind !== 'none';
@@ -89,6 +105,17 @@ export function CommunityList() {
    const noPostsAtAll = posts.status === 'success' && !searching && posts.data.totalCount === 0;
 
    const searchByTag = (tag: string) => query.search(`#${tag}`);
+
+   // 글마다 북마크 버튼을 놓는다. 서버가 내려준 처음 상태로 시작하고 이후는 버튼이 직접 들고 있는다.
+   // 서버 값이 바뀌어(목록을 다시 받아) 들어오면 key가 달라져 새 값으로 다시 시작한다.
+   const bookmarkButton = (post: PostSummary) => (
+      <BookmarkButton
+         key={`${post.id}:${post.bookmarked}`}
+         postId={post.id}
+         initialBookmarked={post.bookmarked}
+         compact
+      />
+   );
 
    const handlePageChange = (page: number) => {
       query.goToPage(page);
@@ -124,7 +151,7 @@ export function CommunityList() {
          )}
 
          <div className="mt-6">
-            {posts.status === 'loading' && <PostListSkeleton view={query.view} />}
+            {(posts.status === 'loading' || outOfRange) && <PostListSkeleton view={query.view} />}
 
             {posts.status === 'error' && (
                <div role="alert" className="flex flex-col items-center px-4 py-20 text-center">
@@ -135,7 +162,7 @@ export function CommunityList() {
                </div>
             )}
 
-            {posts.status === 'success' && posts.data.totalCount === 0 && (
+            {posts.status === 'success' && !outOfRange && posts.data.totalCount === 0 && (
                <CommunityEmpty
                   kind={parsed.kind === 'tag' ? 'tag' : parsed.kind === 'text' ? 'text' : 'none'}
                   keyword={
@@ -146,7 +173,7 @@ export function CommunityList() {
                />
             )}
 
-            {posts.status === 'success' && posts.data.totalCount > 0 && (
+            {posts.status === 'success' && !outOfRange && posts.data.totalCount > 0 && (
                <>
                   {query.view === 'card' ? (
                      <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -157,6 +184,7 @@ export function CommunityList() {
                                     post={post}
                                     highlight={highlight}
                                     onTagClick={searchByTag}
+                                    actions={bookmarkButton(post)}
                                  />
                               </div>
                            </li>
@@ -170,6 +198,7 @@ export function CommunityList() {
                               post={post}
                               highlight={highlight}
                               onTagClick={searchByTag}
+                              actions={bookmarkButton(post)}
                            />
                         ))}
                      </ul>

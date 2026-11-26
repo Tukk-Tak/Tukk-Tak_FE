@@ -1,61 +1,67 @@
-import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import { POST_ERROR, type GetPostsParams, type PostPage, type PostSummary } from '../types';
-import { isMockDeleted, isMockLiked } from './mockPostState';
-import { MOCK_POSTS } from './mockPosts';
+import { ApiError, apiFetch } from '@/shared/lib/apiClient';
+import type { GetPostsParams, PostPage, PostSort, PostSummary } from '../types';
 
-// 검색어 비교용으로 정규화한다. (한글 조합 방식 통일 + 대소문자 무시)
-function normalize(value: string): string {
-   return value.normalize('NFC').trim().toLowerCase();
+// 서버 응답(data) 중 화면이 쓰는 것. 글 id는 숫자로 온다.
+interface PostSummaryData {
+   id: number | string;
+   title: string;
+   imageUrl?: string | null;
+   nickname: string;
+   tags?: string[];
+   likeCount?: number;
+   commentCount?: number;
+   liked?: boolean;
+   bookmarked?: boolean;
 }
 
-function matches(post: PostSummary, { text, tag }: Pick<GetPostsParams, 'text' | 'tag'>): boolean {
-   if (tag) {
-      const wanted = normalize(tag);
-      return post.tags.some((item) => normalize(item) === wanted);
-   }
-   if (text) {
-      const wanted = normalize(text);
-      return (
-         normalize(post.title).includes(wanted) ||
-         normalize(post.authorNickname).includes(wanted) ||
-         post.tags.some((item) => normalize(item).includes(wanted))
-      );
-   }
-   return true;
+interface PostPageData {
+   posts?: PostSummaryData[];
+   page?: number;
+   size?: number;
+   totalElements?: number;
+   totalPages?: number;
 }
 
-// TODO: 백엔드 API가 정해지면 apiFetch 호출로 교체한다. 지금은 UI 확인용 mock이다.
-// 검색·정렬·페이지 나누기는 실제로는 서버가 처리한다. (인기순의 기준도 서버가 정한다. mock은 좋아요 수이다.)
-// mock 규칙: ?mock=empty 는 글이 하나도 없는 상태, ?mock=error 는 불러오기 실패, ?mock=slow 는 느린 응답이다.
+// 서버는 정렬을 대문자(LATEST, POPULAR)로만 받는다. 소문자를 보내면 400이다.
+const SORT_PARAM: Record<PostSort, string> = { popular: 'POPULAR', latest: 'LATEST' };
+
+function toPostSummary(data: PostSummaryData): PostSummary {
+   return {
+      id: String(data.id),
+      title: data.title,
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      authorNickname: data.nickname,
+      likeCount: data.likeCount ?? 0,
+      commentCount: data.commentCount ?? 0,
+      liked: data.liked === true,
+      bookmarked: data.bookmarked === true,
+      thumbnailUrl: data.imageUrl || null,
+   };
+}
+
+// 커뮤니티 글 목록 조회(검색 포함) GET /post
+// 로그인 여부와 상관없이 볼 수 있다. 로그인했다면 토큰이 함께 가서(apiFetch가 붙인다) liked·bookmarked가 그 사용자 기준이고, 아니면 둘 다 false다.
+// - sort: 서버는 sort가 없으면 로그인한 사람은 최신순, 아닌 사람은 인기순으로 정한다. 화면은 늘 같은 기본(인기순)을 보여 주려고 항상 직접 보낸다.
+// - keyword: 비었거나 공백뿐이면 전체 조회, '#'으로 시작하면 태그에서만, 그 밖에는 닉네임·제목·태그에서 부분 일치로 찾는다.
+//   '#'은 URL에서 뒷부분을 잘라 버리므로 URLSearchParams로 인코딩해서 보낸다.
+// - page(1부터)·size(1~30)가 범위를 벗어나거나 숫자가 아니면 400이고, 문구는 서버 message를 그대로 보여 준다.
+// 서버는 범위를 넘은 page를 마지막 페이지로 맞춰 주지 않고 빈 목록을 돌려준다. 그 처리는 호출하는 화면이 한다.
 export async function getPosts(params: GetPostsParams): Promise<PostPage> {
-   await mockDelay(params.mock === 'slow' ? 3000 : 500);
+   const search = new URLSearchParams();
+   if (params.keyword) search.set('keyword', params.keyword);
+   search.set('sort', SORT_PARAM[params.sort]);
+   search.set('page', String(params.page));
+   search.set('size', String(params.pageSize));
 
-   if (params.mock === 'error') {
-      throw new ApiError(
-         POST_ERROR.LOAD_FAILED,
-         '글 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요',
-      );
+   const data = await apiFetch<PostPageData | null>(`/post?${search.toString()}`);
+   if (!data || !Array.isArray(data.posts)) {
+      throw new ApiError('UNKNOWN', '글 목록을 불러오지 못했어요. 잠시 후 다시 시도해주세요');
    }
 
-   // 삭제한 글은 빼고, 좋아요를 누른 글은 개수에 반영한다. (실제로는 서버가 이미 반영해서 내려준다.)
-   const all = (params.mock === 'empty' ? [] : MOCK_POSTS)
-      .filter((post) => !isMockDeleted(post.id))
-      .map((post) => (isMockLiked(post.id) ? { ...post, likeCount: post.likeCount + 1 } : post));
-   const found = all.filter((post) => matches(post, params));
-
-   found.sort((a, b) => {
-      if (params.sort === 'popular' && b.likeCount !== a.likeCount)
-         return b.likeCount - a.likeCount;
-      // 인기순에서 좋아요 수가 같거나 최신순이면 최근 글이 먼저이다.
-      if (b.createdAt !== a.createdAt) return b.createdAt < a.createdAt ? -1 : 1;
-      return a.id < b.id ? -1 : 1;
-   });
-
-   const totalCount = found.length;
-   const totalPages = Math.max(1, Math.ceil(totalCount / params.pageSize));
-   const page = Math.min(Math.max(1, params.page), totalPages);
-   const start = (page - 1) * params.pageSize;
-
-   return { posts: found.slice(start, start + params.pageSize), totalCount, page, totalPages };
+   return {
+      posts: data.posts.map(toPostSummary),
+      totalCount: data.totalElements ?? 0,
+      page: data.page ?? params.page,
+      totalPages: data.totalPages ?? 0,
+   };
 }

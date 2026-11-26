@@ -23,7 +23,6 @@ export type {
 } from './commentTypes';
 export type {
    GetPostsParams,
-   MockMode,
    PostDetail,
    PostPage,
    PostSort,
