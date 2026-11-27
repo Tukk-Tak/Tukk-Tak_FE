@@ -18,7 +18,9 @@ export function CommentItem({ comment }: { comment: CommentView }) {
    const replies = useReplies(comment.postId, comment.id, comment.replyCount);
    const rootDeleted = comment.status === 'deleted';
 
-   const composerOpen = ui.composer?.rootId === comment.id;
+   // 답글 입력창은 로그인한 사용자에게만, 삭제되지 않은 댓글에만 보인다. (삭제된 댓글에는 서버가 답글을 받지 않는다.)
+   // 입력창을 연 채로 로그아웃하거나 이 댓글이 삭제돼도 남아 있지 않게, 열림 상태와 별개로 조건을 다시 확인한다.
+   const composerOpen = ui.loggedIn && !rootDeleted && ui.composer?.rootId === comment.id;
    const showThread =
       comment.status !== 'private_hidden' &&
       // 댓글 개수 갱신이 늦어도, 방금 불러온 답글이 있으면 스레드를 계속 보여 준다.

@@ -53,6 +53,13 @@ export function CommentCard({ postId }: { postId: string }) {
       if (lastPage !== null && page > lastPage) setPage(lastPage);
    }, [lastPage, page]);
 
+   // 보는 사람이 바뀌면(로그인·로그아웃) 열려 있던 답글 입력창을 닫는다. 각 댓글은 새로 만들어지지만 입력창 대상은 여기서 들고 있어서,
+   // 닫지 않으면 새로 만들어진 댓글이 같은 입력창을 다시 열어 버린다.
+   const { viewerChanges } = comments;
+   useEffect(() => {
+      setComposer(null);
+   }, [viewerChanges]);
+
    useEffect(
       () => () => {
          if (highlightTimer.current) clearTimeout(highlightTimer.current);
