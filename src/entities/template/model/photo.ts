@@ -14,7 +14,6 @@ export const PHOTO_TEMPLATE: Template = {
          border: '#3a3a3a',
          surface: '#2a2a2a',
          primary: '#f2f2f2',
-         onPrimary: '#1e1e1e',
          radius: '8px',
       },
       rows: [

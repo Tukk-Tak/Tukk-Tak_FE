@@ -14,7 +14,6 @@ export const COZY_TEMPLATE: Template = {
          border: '#c3b099',
          surface: '#ffffff',
          primary: '#7e654b',
-         onPrimary: '#ffffff',
          radius: '12px',
       },
       rows: [
