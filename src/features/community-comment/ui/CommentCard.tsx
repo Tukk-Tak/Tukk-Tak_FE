@@ -1,8 +1,6 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CommentMock, CommentView } from '@/entities/post';
 import { useSession } from '@/entities/user/model/useSession';
 import { LoginRequiredModal } from '@/shared/ui/LoginRequiredModal';
 import { Pagination } from '@/shared/ui/Pagination';
@@ -13,8 +11,7 @@ import { CommentInput } from './CommentInput';
 import { CommentList } from './CommentList';
 import { GuestLoginBox } from './GuestLoginBox';
 
-const COMMENT_MOCKS: CommentMock[] = ['empty', 'error', 'slow'];
-// 방금 쓴 댓글을 강조해 두는 시간
+// 댓글을 강조해 두는 시간
 const HIGHLIGHT_MS = 2000;
 
 const INPUT_PLACEHOLDER_CLASS =
@@ -24,16 +21,17 @@ const INPUT_PLACEHOLDER_CLASS =
 // 제목 줄의 개수, 입력창, 댓글 목록, 페이지 번호를 담고, 답글 입력창·강조·로그인 안내처럼 여러 곳이 함께 쓰는 상태를 모아 둔다.
 export function CommentCard({ postId }: { postId: string }) {
    const session = useSession();
-   const searchParams = useSearchParams();
-   // TODO: mock 동작 확인용 스위치이다. 백엔드 연동 때 삭제한다. (개발 환경에서만 주소의 ?cmock= 로 켠다.)
-   const mock =
-      process.env.NODE_ENV === 'production'
-         ? undefined
-         : COMMENT_MOCKS.find((mode) => mode === searchParams.get('cmock'));
+   // 지금 보는 사람. 세션을 확인하는 동안은 null이다. 사용자가 바뀌면 내 댓글·비공개 열람 여부를 맞추려고 댓글을 다시 받는다.
+   const viewer =
+      session.status === 'ready'
+         ? session.user
+            ? `user:${session.user.nickname}`
+            : 'guest'
+         : null;
 
    // 댓글 페이지는 주소가 아니라 이 컴포넌트가 들고 있는다. (댓글 페이지까지 공유할 일은 없다.)
    const [page, setPage] = useState(1);
-   const comments = useComments(postId, page, mock);
+   const comments = useComments(postId, page, viewer);
    const listRef = useRef<HTMLDivElement>(null);
 
    const [composer, setComposer] = useState<ComposerTarget | null>(null);
@@ -44,13 +42,16 @@ export function CommentCard({ postId }: { postId: string }) {
    const loggedIn = session.status === 'ready' && session.user !== null;
    const sessionReady = session.status === 'ready';
 
-   // 요청한 페이지가 범위를 넘으면 서버가 마지막 페이지를 돌려준다. 같은 페이지로 맞춘다.
+   // 서버는 범위를 넘은 페이지를 마지막 페이지로 맞춰 주지 않고 빈 목록만 돌려준다. (삭제로 페이지가 줄어든 경우 등)
+   // 댓글이 있는데 요청한 페이지가 마지막 페이지보다 크면 마지막 페이지로 옮긴다.
    // 새로 불러오는 중(refreshing)에는 아직 이전 페이지의 데이터라서, 끝난 뒤에만 비교한다. (안 그러면 페이지 이동이 되돌려진다.)
-   const loadedPage =
-      comments.status === 'success' && !comments.refreshing ? comments.data.page : null;
+   const lastPage =
+      comments.status === 'success' && !comments.refreshing && comments.data.totalPages > 0
+         ? comments.data.totalPages
+         : null;
    useEffect(() => {
-      if (loadedPage !== null && loadedPage !== page) setPage(loadedPage);
-   }, [loadedPage, page]);
+      if (lastPage !== null && page > lastPage) setPage(lastPage);
+   }, [lastPage, page]);
 
    useEffect(
       () => () => {
@@ -80,11 +81,11 @@ export function CommentCard({ postId }: { postId: string }) {
       [loggedIn, composer, highlightId, highlight, reload],
    );
 
-   // 새 댓글은 최신순이라 1페이지 맨 위에 생긴다. 1페이지로 가서 맨 위로 스크롤하고 잠깐 강조한다.
-   const handleCreated = (created: CommentView) => {
+   // 새 댓글은 최신순이라 1페이지 맨 위에 생긴다. 1페이지로 가서 다시 받고 맨 위로 스크롤한다.
+   // (서버가 만든 댓글의 id를 주지 않아서 방금 쓴 댓글을 강조하지는 않는다.)
+   const handleCreated = () => {
       setPage(1);
       reload();
-      highlight(created.id);
       listRef.current?.scrollTo({ top: 0 });
    };
 
@@ -132,6 +133,7 @@ export function CommentCard({ postId }: { postId: string }) {
                   message={comments.status === 'error' ? comments.message : undefined}
                   onRetry={comments.reload}
                   canWrite={loggedIn}
+                  viewerVersion={comments.viewerChanges}
                />
             </ScrollArea>
 

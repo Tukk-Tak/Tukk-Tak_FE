@@ -1,101 +1,34 @@
-import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import {
-   COMMENT_ERROR,
-   COMMENT_MAX_LENGTH,
-   type CommentView,
-   type CreateCommentPayload,
-   type CreateReplyPayload,
-} from '../commentTypes';
-import {
-   canView,
-   createRecord,
-   currentViewer,
-   findRecord,
-   postAuthorOf,
-   toView,
-} from './mockCommentStore';
-import { isMockDeleted } from './mockPostState';
+import { apiFetch } from '@/shared/lib/apiClient';
+import type { CreateCommentPayload } from '../commentTypes';
 
-// 서버가 다시 검사하는 입력 규칙: 앞뒤 공백을 뺀 내용이 1~100자여야 한다. (화면에서 막아도 서버가 다시 확인한다.)
-function validateContent(content: string): string {
-   const trimmed = content.trim();
-   if (trimmed.length < 1 || trimmed.length > COMMENT_MAX_LENGTH) {
-      throw new ApiError(COMMENT_ERROR.INVALID, `댓글은 1~${COMMENT_MAX_LENGTH}자로 입력해주세요`);
-   }
-   return trimmed;
-}
-
-function requireViewer(): string {
-   const viewer = currentViewer();
-   if (!viewer) throw new ApiError(COMMENT_ERROR.UNAUTHENTICATED, '로그인이 필요해요');
-   return viewer;
-}
-
-// TODO: 백엔드 API가 정해지면 교체한다. (POST /posts/{id}/comments)
-// 댓글을 쓴다. 등록한 댓글은 수정할 수 없다.
-// mock 규칙: 내용이 "등록실패"이면 오류가 나고, 그 외에는 약 0.5초 뒤 성공한다.
-export async function createComment(
+// 댓글·대댓글 작성 POST /post/comment/{postId}
+// 본문의 parentCommentId가 null이면 댓글, 부모 댓글 id이면 대댓글이다. 성공해도 data는 null이라 만든 댓글의 id는 알 수 없다.
+// (화면은 등록 뒤 목록을 다시 받아서 보여 준다. 최신순이라 새 댓글은 1페이지 맨 위에 생긴다.)
+// 실패하면 서버 message를 그대로 보여 준다.
+// - 400: 내용이 비었거나("댓글을 입력해주세요.") 너무 길 때("댓글은 최대 100글자까지 입력할 수 있어요")
+// - 404: 없거나 삭제된 글, 없거나 삭제된 부모 댓글(다른 글의 부모 댓글 포함)
+// - 로그인하지 않았거나 작성 권한이 없을 때(사업자만 쓸 수 있다)의 인증·인가 오류
+async function postComment(
    postId: string,
+   parentCommentId: number | null,
    { content, isPrivate }: CreateCommentPayload,
-): Promise<CommentView> {
-   await mockDelay(500);
-
-   const viewer = requireViewer();
-   const text = validateContent(content);
-   if (isMockDeleted(postId)) {
-      throw new ApiError(COMMENT_ERROR.NOT_FOUND, '게시물을 찾을 수 없어요');
-   }
-   if (text === '등록실패') {
-      throw new ApiError(
-         COMMENT_ERROR.CREATE_FAILED,
-         '댓글을 등록하지 못했어요. 잠시 후 다시 시도해주세요',
-      );
-   }
-
-   const record = createRecord(postId, {
-      parentId: null,
-      author: viewer,
-      content: text,
-      isPrivate,
-      mention: null,
+): Promise<void> {
+   await apiFetch<null>(`/post/comment/${encodeURIComponent(postId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parentCommentId, content, isPrivate }),
    });
-   return toView(record, viewer);
 }
 
-// TODO: 백엔드 API가 정해지면 교체한다. (POST /comments/{id}/replies)
-// 대댓글을 쓴다. 답글은 항상 그 스레드의 최상위 댓글에 붙는다. (대댓글에 답해도 깊이는 늘지 않고, 멘션으로 누구에게 한 말인지 표시한다.)
-// 비공개 댓글 아래의 답글은 서버가 비공개로 등록한다. (화면에서 체크를 고정해도 서버가 다시 정한다.)
-// mock 규칙: 내용이 "등록실패"이면 오류가 나고, 그 외에는 약 0.5초 뒤 성공한다.
-export async function createReply(
+export function createComment(postId: string, payload: CreateCommentPayload): Promise<void> {
+   return postComment(postId, null, payload);
+}
+
+// 대댓글 작성. 대댓글에 답해도 부모는 그 스레드의 최상위 댓글이다. (서버가 대댓글 id를 부모로 받으면 404를 준다.)
+export function createReply(
+   postId: string,
    rootId: string,
-   { content, isPrivate, mentionNickname }: CreateReplyPayload,
-): Promise<CommentView> {
-   await mockDelay(500);
-
-   const viewer = requireViewer();
-   const text = validateContent(content);
-   const root = findRecord(rootId);
-   if (!root || root.parentId !== null) {
-      throw new ApiError(COMMENT_ERROR.NOT_FOUND, '댓글을 찾을 수 없어요');
-   }
-   // 볼 수 없는 비공개 댓글에는 답글을 달 수 없다. (삭제된 댓글의 남은 답글에는 달 수 있다.)
-   if (!root.deleted && !canView(root, null, viewer, postAuthorOf(root.postId))) {
-      throw new ApiError(COMMENT_ERROR.FORBIDDEN, '답글을 달 수 없는 댓글이에요');
-   }
-   if (text === '등록실패') {
-      throw new ApiError(
-         COMMENT_ERROR.CREATE_FAILED,
-         '답글을 등록하지 못했어요. 잠시 후 다시 시도해주세요',
-      );
-   }
-
-   const record = createRecord(root.postId, {
-      parentId: root.id,
-      author: viewer,
-      content: text,
-      isPrivate: isPrivate || root.isPrivate,
-      mention: mentionNickname?.trim() || null,
-   });
-   return toView(record, viewer);
+   payload: CreateCommentPayload,
+): Promise<void> {
+   return postComment(postId, Number(rootId), payload);
 }

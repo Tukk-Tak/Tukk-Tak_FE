@@ -10,17 +10,9 @@ export { usePosts } from './model/usePosts';
 export { PostCard } from './ui/PostCard';
 export { PostRow } from './ui/PostRow';
 export { PostThumbnail } from './ui/PostThumbnail';
-export { COMMENT_MAX_LENGTH, COMMENT_PAGE_SIZE, REPLY_PAGE_SIZE } from './commentTypes';
+export { COMMENT_MAX_LENGTH, COMMENT_PAGE_SIZE } from './commentTypes';
 export { POST_SORTS } from './types';
-export type {
-   CommentMock,
-   CommentPage,
-   CommentStatus,
-   CommentView,
-   CreateCommentPayload,
-   CreateReplyPayload,
-   ReplyPage,
-} from './commentTypes';
+export type { CommentPage, CommentStatus, CommentView, CreateCommentPayload } from './commentTypes';
 export type {
    GetPostsParams,
    PostDetail,

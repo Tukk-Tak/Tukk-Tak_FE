@@ -3,13 +3,10 @@
 import { createContext, useContext } from 'react';
 
 // 열려 있는 답글 입력창이 가리키는 곳. 입력창은 한 번에 하나만 열린다.
+// 대댓글에 답해도 서버는 그 스레드의 최상위 댓글에만 붙이므로(멘션 필드도 없다) 스레드만 가리키면 된다.
 export interface ComposerTarget {
    // 입력창이 붙는 스레드의 최상위 댓글 id
    rootId: string;
-   // 멘션 칩으로 붙일 닉네임. 최상위 댓글에 바로 답할 때는 null
-   mention: string | null;
-   // 멘션 대상이 내가 쓰는 비공개 답글을 볼 수 있는지 (서버가 계산한 값)
-   mentionCanViewPrivateReply: boolean;
 }
 
 // 댓글 카드 안의 여러 컴포넌트가 함께 쓰는 화면 상태와 동작.
@@ -18,7 +15,8 @@ export interface CommentUi {
    composer: ComposerTarget | null;
    openComposer: (target: ComposerTarget) => void;
    closeComposer: () => void;
-   // 방금 쓴 댓글처럼 잠깐 강조할 댓글 id (2초 뒤 사라진다.)
+   // 잠깐 강조할 댓글 id (2초 뒤 사라진다.)
+   // 서버가 댓글 작성 뒤 만든 댓글의 id를 주지 않아서 등록 직후에는 쓰지 않는다. 알림에서 특정 댓글로 들어올 때 쓸 수 있게 남겨 둔다.
    highlightId: string | null;
    highlight: (id: string) => void;
    // 댓글·답글을 쓰거나 지운 뒤 목록(개수)을 다시 불러온다.

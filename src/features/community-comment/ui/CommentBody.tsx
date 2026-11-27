@@ -15,37 +15,42 @@ interface CommentBodyProps {
    kind: 'root' | 'reply';
    // 이 댓글이 속한 스레드의 최상위 댓글 id
    rootId: string;
+   // 이 스레드의 최상위 댓글이 삭제됐는지. 삭제된 댓글에는 서버가 답글을 받지 않아서, 남은 답글에도 답글 버튼을 숨긴다.
+   rootDeleted?: boolean;
    onReply: (target: ComposerTarget) => void;
    onDeleted: (commentId: string) => void;
 }
 
 // 보이는 댓글·답글의 본문: 아바타, 닉네임, 시간, 작성자·비공개 표시, 내용, 답글·삭제 동작.
 // 내용은 글자 그대로만 보여 준다. (HTML로 해석하지 않고, 줄바꿈은 유지하고, 공백 없는 긴 글은 줄바꿈한다.)
-export function CommentBody({ comment, kind, rootId, onReply, onDeleted }: CommentBodyProps) {
+export function CommentBody({
+   comment,
+   kind,
+   rootId,
+   rootDeleted = false,
+   onReply,
+   onDeleted,
+}: CommentBodyProps) {
    const ui = useCommentUi();
    const ref = useRef<HTMLDivElement>(null);
    const highlighted = ui.highlightId === comment.id;
    const nickname = comment.authorNickname ?? '';
 
-   // 방금 쓴 댓글이 화면 밖에 있으면 보이는 곳까지 스크롤한다.
+   // 강조된 댓글이 화면 밖에 있으면 보이는 곳까지 스크롤한다.
    useEffect(() => {
       if (highlighted) ref.current?.scrollIntoView({ block: 'nearest' });
    }, [highlighted]);
 
    // 로그인하지 않았어도 보이는 댓글에는 답글 버튼을 보여 주고, 누르면 로그인 안내를 띄운다.
-   const showReply = comment.canReply || (!ui.loggedIn && comment.status === 'visible');
+   const showReply = comment.status === 'visible' && !rootDeleted;
 
+   // 대댓글에 답해도 그 스레드의 최상위 댓글에 붙는다.
    const handleReply = () => {
       if (!ui.loggedIn) {
          ui.requireLogin();
          return;
       }
-      onReply({
-         rootId,
-         // 최상위 댓글에 바로 답할 때는 멘션을 붙이지 않고, 대댓글에 답할 때만 그 사람을 멘션한다.
-         mention: kind === 'reply' ? nickname : null,
-         mentionCanViewPrivateReply: comment.authorCanViewPrivateReply,
-      });
+      onReply({ rootId });
    };
 
    return (
@@ -78,11 +83,6 @@ export function CommentBody({ comment, kind, rootId, onReply, onDeleted }: Comme
             </div>
 
             <p className="mt-1 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap text-black/80">
-               {comment.mentionNickname && (
-                  <span className="mr-1 font-bold text-brand-orange">
-                     @{comment.mentionNickname}
-                  </span>
-               )}
                {comment.content}
             </p>
 

@@ -31,10 +31,19 @@ interface CommentListProps {
    onRetry: () => void;
    // 글을 쓸 수 있는 사용자인지 (빈 목록 안내 문구가 달라진다.)
    canWrite: boolean;
+   // 보는 사람이 바뀐 횟수. 바뀌면 각 댓글의 열려 있던 답글 목록을 버리고 새로 시작한다.
+   viewerVersion: number;
 }
 
 // 댓글 목록의 상태별 화면(불러오는 중 / 불러오기 실패 / 댓글 없음 / 목록).
-export function CommentList({ status, comments, message, onRetry, canWrite }: CommentListProps) {
+export function CommentList({
+   status,
+   comments,
+   message,
+   onRetry,
+   canWrite,
+   viewerVersion,
+}: CommentListProps) {
    if (status === 'loading') return <CommentListSkeleton />;
 
    if (status === 'error') {
@@ -62,7 +71,7 @@ export function CommentList({ status, comments, message, onRetry, canWrite }: Co
    return (
       <ul>
          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
+            <CommentItem key={`${viewerVersion}:${comment.id}`} comment={comment} />
          ))}
       </ul>
    );

@@ -1,44 +1,18 @@
-import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import { COMMENT_ERROR, REPLY_PAGE_SIZE, type ReplyPage } from '../commentTypes';
-import {
-   canView,
-   currentViewer,
-   findRecord,
-   getRecords,
-   postAuthorOf,
-   toView,
-} from './mockCommentStore';
+import { ApiError, apiFetch } from '@/shared/lib/apiClient';
+import type { CommentView } from '../commentTypes';
+import { toCommentView, type CommentData } from './commentMapper';
 
-// TODO: 백엔드 API가 정해지면 apiFetch 호출로 교체한다. (GET /comments/{id}/replies?cursor=&size=5)
-// 한 스레드의 대댓글을 오래된 순으로 5개씩 돌려준다. cursor는 다음에 받을 위치를 가리키는 값이고, 서버가 만든 값을 그대로 다시 보낸다.
-// 비공개로 숨겨진 댓글의 대댓글은 요청해도 받을 수 없다.
-export async function getReplies(
-   rootId: string,
-   { cursor }: { cursor?: string | null } = {},
-): Promise<ReplyPage> {
-   await mockDelay(300);
-
-   const root = findRecord(rootId);
-   if (!root || root.parentId !== null) {
-      throw new ApiError(COMMENT_ERROR.NOT_FOUND, '댓글을 찾을 수 없어요');
+// 한 스레드(최상위 댓글 하나)의 대댓글 조회 GET /post/comment/{postId}/{parentCommentId}
+// 페이지 없이 모두 배열로 온다. 대댓글이 없으면 빈 배열이다. 로그인 여부와 상관없이 볼 수 있고, 토큰이 있으면 그 사용자 기준이다.
+// - 없는 글은 404("게시글을 찾을 수 없어요"), 부모 댓글이 없거나 다른 글의 것이거나 대댓글 id를 넣었으면 404("댓글을 찾을 수 없어요")이다.
+//   문구는 서버 message를 그대로 보여 준다.
+// - 비공개 대댓글을 누가 볼 수 있는지는 서버가 정하고, 가려진 값(null)만 화면이 따른다.
+export async function getReplies(postId: string, rootId: string): Promise<CommentView[]> {
+   const data = await apiFetch<CommentData[] | null>(
+      `/post/comment/${encodeURIComponent(postId)}/${encodeURIComponent(rootId)}`,
+   );
+   if (!Array.isArray(data)) {
+      throw new ApiError('UNKNOWN', '답글을 불러오지 못했어요. 잠시 후 다시 시도해주세요');
    }
-   const viewer = currentViewer();
-   if (!root.deleted && !canView(root, null, viewer, postAuthorOf(root.postId))) {
-      throw new ApiError(COMMENT_ERROR.FORBIDDEN, '볼 수 없는 댓글이에요');
-   }
-
-   const replies = getRecords(root.postId)
-      .filter((record) => record.parentId === root.id)
-      .sort((a, b) => a.createdAt - b.createdAt);
-
-   const start = Number(cursor ?? 0) || 0;
-   const end = start + REPLY_PAGE_SIZE;
-   const hasNext = end < replies.length;
-
-   return {
-      replies: replies.slice(start, end).map((record) => toView(record, viewer)),
-      nextCursor: hasNext ? String(end) : null,
-      hasNext,
-   };
+   return data.map((item) => toCommentView(item, { postId, parentId: rootId }));
 }
