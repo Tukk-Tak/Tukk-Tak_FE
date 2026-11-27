@@ -10,13 +10,17 @@ import { ReplyComposer } from './ReplyComposer';
 import { ReplyList } from './ReplyList';
 
 // 최상위 댓글 하나와 그 스레드(대댓글, 답글 입력창).
-// 어떻게 보일지는 서버가 알려 준 status로 정하고, 이 컴포넌트는 열람 권한을 직접 계산하지 않는다.
+// 어떻게 보일지는 서버가 알려 준 상태(삭제·비공개로 가려졌는지)로 정하고, 이 컴포넌트는 열람 권한을 직접 계산하지 않는다.
 // - visible: 본문 + 답글 / private_hidden: "비공개 댓글이에요." 한 줄(아래 답글도 없음) / deleted: "삭제된 댓글입니다." 한 줄(남은 답글은 보임)
+// 삭제된 댓글에는 서버가 답글을 받지 않으므로(404), 남은 답글에도 답글 버튼을 보여 주지 않는다.
 export function CommentItem({ comment }: { comment: CommentView }) {
    const ui = useCommentUi();
-   const replies = useReplies(comment.id);
+   const replies = useReplies(comment.postId, comment.id, comment.replyCount);
+   const rootDeleted = comment.status === 'deleted';
 
-   const composerOpen = ui.composer?.rootId === comment.id;
+   // 답글 입력창은 로그인한 사용자에게만, 삭제되지 않은 댓글에만 보인다. (삭제된 댓글에는 서버가 답글을 받지 않는다.)
+   // 입력창을 연 채로 로그아웃하거나 이 댓글이 삭제돼도 남아 있지 않게, 열림 상태와 별개로 조건을 다시 확인한다.
+   const composerOpen = ui.loggedIn && !rootDeleted && ui.composer?.rootId === comment.id;
    const showThread =
       comment.status !== 'private_hidden' &&
       // 댓글 개수 갱신이 늦어도, 방금 불러온 답글이 있으면 스레드를 계속 보여 준다.
@@ -28,17 +32,18 @@ export function CommentItem({ comment }: { comment: CommentView }) {
       replies.expand();
    };
 
-   // 답글을 등록하면 댓글 개수 갱신과 스레드 불러오기를 함께 시작하고, 새 답글이 맨 끝에 보인 뒤에 입력창을 닫고 강조한다.
+   // 답글을 등록하면 댓글 개수 갱신과 스레드 불러오기를 함께 시작하고, 새 답글이 맨 끝에 보인 뒤에 입력창을 닫는다.
    // (첫 답글이면 입력창이 닫히는 순간 스레드가 사라지지 않도록, 닫는 일을 불러오기 뒤로 미룬다.)
-   const handleSubmitted = async (reply: CommentView) => {
+   // 기다리는 사이 사용자가 다른 스레드의 입력창을 열었을 수 있어서, 이 스레드의 입력창일 때만 닫는다.
+   const handleSubmitted = async () => {
       ui.refresh();
-      await replies.loadAll();
-      ui.closeComposer();
-      ui.highlight(reply.id);
+      await replies.reload();
+      ui.closeComposer(comment.id);
    };
 
-   const handleReplyDeleted = (commentId: string) => {
-      replies.markDeleted(commentId);
+   // 답글을 지우면 서버 기준으로 스레드와 댓글 개수를 다시 받는다. (다 지워진 삭제된 댓글은 목록에서도 빠진다.)
+   const handleReplyDeleted = () => {
+      void replies.reload();
       ui.refresh();
    };
 
@@ -59,6 +64,7 @@ export function CommentItem({ comment }: { comment: CommentView }) {
          {showThread && (
             <ReplyList
                rootId={comment.id}
+               rootDeleted={rootDeleted}
                replyCount={comment.replyCount}
                replies={replies}
                onReply={handleReply}
@@ -66,12 +72,11 @@ export function CommentItem({ comment }: { comment: CommentView }) {
             >
                {composerOpen && ui.composer && (
                   <ReplyComposer
-                     // 다른 사람에게 답하는 것으로 바뀌면 입력창을 새로 시작한다.
-                     key={`${ui.composer.rootId}:${ui.composer.mention ?? ''}`}
+                     postId={comment.postId}
                      target={ui.composer}
                      rootPrivate={comment.isPrivate}
                      onSubmitted={handleSubmitted}
-                     onCancel={ui.closeComposer}
+                     onCancel={() => ui.closeComposer(comment.id)}
                   />
                )}
             </ReplyList>

@@ -13,8 +13,11 @@ export function setUnauthorizedHandler(handler: ((sentToken: string) => void) | 
 }
 
 // 요청에 토큰을 붙였는데 401이면 그 토큰은 더 쓸 수 없다. (토큰 없이 보낸 요청의 401, 예: 로그인 실패는 해당 없음)
-function notifyIfUnauthorized(status: number, sentToken: string | null) {
-   if (status === 401 && sentToken) unauthorizedHandler?.(sentToken);
+// 핸들러를 실제로 불렀는지 돌려준다. 호출한 쪽이 이를 ApiError에 표시해서, 화면이 "안내가 이미 떴는지"를 알 수 있게 한다.
+function notifyIfUnauthorized(status: number, sentToken: string | null): boolean {
+   if (status !== 401 || !sentToken || !unauthorizedHandler) return false;
+   unauthorizedHandler(sentToken);
+   return true;
 }
 
 // 일반 요청과 파일 요청이 함께 쓰는 옵션.
@@ -36,6 +39,10 @@ interface ApiEnvelope<T> {
 }
 
 export class ApiError extends Error {
+   // 401이고 전역 처리(unauthorizedHandler)가 이미 "로그아웃됐어요" 안내를 띄웠는지.
+   // 토큰 없이 보낸 요청의 401은 안내가 없으므로 false이고, 그때는 호출한 화면이 오류 문구를 직접 보여 줘야 한다.
+   notified = false;
+
    constructor(
       public code: string,
       message: string,
@@ -52,10 +59,11 @@ export function toApiError(error: unknown): ApiError {
    return new ApiError('UNKNOWN', '요청 처리 중 오류가 발생했어요. 잠시 후 다시 시도해주세요');
 }
 
-// 로그인 토큰이 거절된(401) 오류인지. 이 경우 위의 401 처리(unauthorizedHandler)가 이미 "시간이 지나 로그아웃됐어요" 안내를 띄우므로,
+// 로그인 토큰이 거절된(401) 오류이고, 위의 401 처리(unauthorizedHandler)가 이미 "시간이 지나 로그아웃됐어요" 안내를 띄운 경우인지.
 // 호출한 쪽이 같은 취지의 오류 문구를 한 번 더 띄우지 않게 가려낼 때 쓴다.
+// 토큰 없이 보낸 요청의 401처럼 안내가 뜨지 않은 경우는 false라서, 호출한 쪽이 서버 문구를 보여 준다. (아무 반응이 없는 것을 막는다.)
 export function isUnauthorizedError(error: unknown): boolean {
-   return error instanceof ApiError && error.status === 401;
+   return error instanceof ApiError && error.status === 401 && error.notified;
 }
 
 // 경로(/post)를 서버 주소와 이어 붙인다. 서버 주소가 설정되지 않았으면 엉뚱한 곳(이 사이트 자신)으로 요청이 가므로 막는다.
@@ -116,8 +124,9 @@ export async function apiFetch<T>(
 
    const body = parseEnvelope<T>(await res.text());
    if (!res.ok) {
-      notifyIfUnauthorized(res.status, token);
-      throw toFailure(res.status, body);
+      const failure = toFailure(res.status, body);
+      failure.notified = notifyIfUnauthorized(res.status, token);
+      throw failure;
    }
    return body?.data as T;
 }
@@ -162,8 +171,9 @@ export function apiUploadForm<T>(
          if (xhr.status >= 200 && xhr.status < 300) {
             resolve(body?.data as T);
          } else {
-            notifyIfUnauthorized(xhr.status, token);
-            reject(toFailure(xhr.status, body));
+            const failure = toFailure(xhr.status, body);
+            failure.notified = notifyIfUnauthorized(xhr.status, token);
+            reject(failure);
          }
       };
       xhr.onerror = () => reject(new ApiError('NETWORK_ERROR', '네트워크 연결을 확인해주세요'));

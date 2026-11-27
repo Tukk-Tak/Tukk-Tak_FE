@@ -2,7 +2,7 @@
 
 import { Lock, Send } from 'lucide-react';
 import { useRef, useState, type FocusEvent, type KeyboardEvent } from 'react';
-import { COMMENT_MAX_LENGTH, createComment, type CommentView } from '@/entities/post';
+import { COMMENT_MAX_LENGTH, createComment } from '@/entities/post';
 import { Button } from '@/shared/ui/Button';
 import { Checkbox } from '@/shared/ui/Checkbox';
 import { FieldMessage } from '@/shared/ui/FieldMessage';
@@ -11,7 +11,8 @@ import { useCommentSubmit } from '../model/useCommentSubmit';
 
 interface CommentInputProps {
    postId: string;
-   onCreated: (comment: CommentView) => void;
+   // 등록에 성공했을 때. 서버가 만든 댓글을 돌려주지 않아서 부르는 쪽이 목록을 다시 받는다.
+   onCreated: () => void;
 }
 
 // 댓글 입력창. 평소에는 한 줄로 접혀 있고, 누르면 3줄 입력칸과 비공개 선택, 글자 수, 등록 버튼이 펼쳐진다.
@@ -28,15 +29,16 @@ export function CommentInput({ postId, onCreated }: CommentInputProps) {
 
    const handleSubmit = async () => {
       if (!canSubmit) return;
-      const created = await submit(() =>
-         createComment(postId, { content: content.trim(), isPrivate }),
-      );
+      const created = await submit(async () => {
+         await createComment(postId, { content: content.trim(), isPrivate });
+         return true;
+      });
       if (!created) return;
 
       setContent('');
       setIsPrivate(false);
       setExpanded(false);
-      onCreated(created);
+      onCreated();
    };
 
    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
