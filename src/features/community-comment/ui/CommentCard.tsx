@@ -79,7 +79,8 @@ export function CommentCard({ postId }: { postId: string }) {
          loggedIn,
          composer,
          openComposer: setComposer,
-         closeComposer: () => setComposer(null),
+         closeComposer: (rootId) =>
+            setComposer((prev) => (rootId === undefined || prev?.rootId === rootId ? null : prev)),
          highlightId,
          highlight,
          refresh: reload,

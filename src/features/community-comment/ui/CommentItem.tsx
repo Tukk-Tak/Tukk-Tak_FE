@@ -34,10 +34,11 @@ export function CommentItem({ comment }: { comment: CommentView }) {
 
    // 답글을 등록하면 댓글 개수 갱신과 스레드 불러오기를 함께 시작하고, 새 답글이 맨 끝에 보인 뒤에 입력창을 닫는다.
    // (첫 답글이면 입력창이 닫히는 순간 스레드가 사라지지 않도록, 닫는 일을 불러오기 뒤로 미룬다.)
+   // 기다리는 사이 사용자가 다른 스레드의 입력창을 열었을 수 있어서, 이 스레드의 입력창일 때만 닫는다.
    const handleSubmitted = async () => {
       ui.refresh();
       await replies.reload();
-      ui.closeComposer();
+      ui.closeComposer(comment.id);
    };
 
    // 답글을 지우면 서버 기준으로 스레드와 댓글 개수를 다시 받는다. (다 지워진 삭제된 댓글은 목록에서도 빠진다.)
@@ -75,7 +76,7 @@ export function CommentItem({ comment }: { comment: CommentView }) {
                      target={ui.composer}
                      rootPrivate={comment.isPrivate}
                      onSubmitted={handleSubmitted}
-                     onCancel={ui.closeComposer}
+                     onCancel={() => ui.closeComposer(comment.id)}
                   />
                )}
             </ReplyList>

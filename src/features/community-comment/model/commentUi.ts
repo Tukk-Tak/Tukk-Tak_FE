@@ -14,7 +14,9 @@ export interface CommentUi {
    loggedIn: boolean;
    composer: ComposerTarget | null;
    openComposer: (target: ComposerTarget) => void;
-   closeComposer: () => void;
+   // rootId를 넘기면 그 스레드의 입력창이 열려 있을 때만 닫는다. (등록이 끝나길 기다리는 사이 사용자가 다른 스레드의 입력창을 열었다면 그것은 두어야 한다.)
+   // 넘기지 않으면 어느 입력창이든 닫는다.
+   closeComposer: (rootId?: string) => void;
    // 잠깐 강조할 댓글 id (2초 뒤 사라진다.)
    // 서버가 댓글 작성 뒤 만든 댓글의 id를 주지 않아서 등록 직후에는 쓰지 않는다. 알림에서 특정 댓글로 들어올 때 쓸 수 있게 남겨 둔다.
    highlightId: string | null;
