@@ -66,7 +66,7 @@ interface ThemeConfig {
 - 글꼴 id에 해당하는 실제 `font-family`
 
 블록 안의 개별 설정(헤더 로고 크기, 줄글 정렬, 사진 크기 등)은 `theme`가 아니라 각 블록의
-`content`에 들어갑니다. (`docs/editor-block-rules.md` 참고)
+`content`에 들어갑니다. (블록별 규칙은 백엔드에 따로 전달한 블록 규칙 문서를 따릅니다)
 
 ## 편집 화면의 동작 (참고)
 
