@@ -10,7 +10,7 @@ function isHighlighted(tag: string, highlight?: TagHighlight): boolean {
    if (!highlight) return false;
    const a = normalize(tag);
    const b = normalize(highlight.value);
-   return highlight.exact ? a === b : a.includes(b);
+   return a.includes(b);
 }
 
 interface TagListProps {

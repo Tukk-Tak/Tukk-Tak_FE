@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { PostSummary, TagHighlight } from '../types';
 import { PostStats } from './PostStats';
 import { PostThumbnail } from './PostThumbnail';
@@ -8,10 +9,12 @@ interface PostCardProps {
    post: PostSummary;
    highlight?: TagHighlight;
    onTagClick?: (tag: string) => void;
+   // 북마크 버튼 같은 동작 버튼. 목록 화면이 정해서 넣는다.
+   actions?: ReactNode;
 }
 
 // 카드형 목록의 글 하나. 카드 전체를 누르면 글로 이동하고(제목 링크가 카드를 덮는다), 태그는 따로 눌린다.
-export function PostCard({ post, highlight, onTagClick }: PostCardProps) {
+export function PostCard({ post, highlight, onTagClick, actions }: PostCardProps) {
    return (
       <article className="relative flex flex-col overflow-hidden rounded-2xl border border-brand-line bg-white transition-shadow hover:shadow-card has-[a:focus-visible]:shadow-card">
          <PostThumbnail
@@ -35,7 +38,12 @@ export function PostCard({ post, highlight, onTagClick }: PostCardProps) {
                <span className="min-w-0 truncate text-xs font-bold text-black/70">
                   {post.authorNickname}
                </span>
-               <PostStats likeCount={post.likeCount} commentCount={post.commentCount} />
+               <PostStats
+                  likeCount={post.likeCount}
+                  commentCount={post.commentCount}
+                  liked={post.liked}
+                  actions={actions}
+               />
             </div>
          </div>
       </article>
