@@ -52,6 +52,12 @@ export function toApiError(error: unknown): ApiError {
    return new ApiError('UNKNOWN', '요청 처리 중 오류가 발생했어요. 잠시 후 다시 시도해주세요');
 }
 
+// 로그인 토큰이 거절된(401) 오류인지. 이 경우 위의 401 처리(unauthorizedHandler)가 이미 "시간이 지나 로그아웃됐어요" 안내를 띄우므로,
+// 호출한 쪽이 같은 취지의 오류 문구를 한 번 더 띄우지 않게 가려낼 때 쓴다.
+export function isUnauthorizedError(error: unknown): boolean {
+   return error instanceof ApiError && error.status === 401;
+}
+
 // 경로(/post)를 서버 주소와 이어 붙인다. 서버 주소가 설정되지 않았으면 엉뚱한 곳(이 사이트 자신)으로 요청이 가므로 막는다.
 export function apiUrl(path: string): string {
    if (!API_BASE_URL) {

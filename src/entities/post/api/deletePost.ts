@@ -1,23 +1,9 @@
-import { readMockSession } from '@/entities/user/api/mockSession';
-import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import { POST_ERROR } from '../types';
-import { isMockDeleted, markMockDeleted } from './mockPostState';
-import { MOCK_POSTS } from './mockPosts';
+import { apiFetch } from '@/shared/lib/apiClient';
 
-// TODO: 백엔드 API가 정해지면 교체한다. 지금은 UI 확인용 mock이다.
-// 실제로는 서버가 작성자(또는 관리자)인지 다시 확인하고, 글과 댓글·좋아요를 함께 지운다. 삭제 버튼을 보여 주는 것(canDelete)과 별개이다.
-// mock 규칙: 작성자가 아니면 오류이고, 그 외에는 약 0.6초 뒤 삭제된다. (삭제한 글은 목록과 상세에서 사라진다.)
+// 게시물 삭제 DELETE /post/{postId}
+// 작성자 본인과 관리자만 삭제할 수 있고, 서버는 글을 소프트 딜리트한다. (이후 목록·상세에서는 없는 글이다.)
+// 성공하면 data는 비어 있다. 권한이 없으면 403, 글이 없거나 이미 삭제됐으면 404이고, 문구는 서버 message를 그대로 보여 준다.
+// 삭제 버튼을 보여 줄지는 화면이 정하지만, 실제 권한은 여기서 서버가 다시 확인한다.
 export async function deletePost(id: string): Promise<void> {
-   await mockDelay(600);
-
-   const post = MOCK_POSTS.find((item) => item.id === id);
-   if (!post || isMockDeleted(id)) {
-      throw new ApiError(POST_ERROR.NOT_FOUND, '게시물을 찾을 수 없어요');
-   }
-   if (readMockSession()?.nickname !== post.authorNickname) {
-      throw new ApiError(POST_ERROR.FORBIDDEN, '삭제할 수 없는 게시물이에요');
-   }
-
-   markMockDeleted(id);
+   await apiFetch<null>(`/post/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

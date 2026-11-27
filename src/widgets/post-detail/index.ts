@@ -1,1 +1,1 @@
-export { PostDetail, PostDetailFallback } from './ui/PostDetail';
+export { PostDetail } from './ui/PostDetail';

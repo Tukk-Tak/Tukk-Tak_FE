@@ -37,20 +37,22 @@ export interface PostPage {
    totalPages: number;
 }
 
-// 게시물 상세. 보는 사람에 따라 달라지는 값(liked, canDelete)은 서버가 계산해서 내려주고, 화면은 그대로 그린다.
+// 게시물 상세. 보는 사람에 따라 달라지는 값(liked, bookmarked)은 서버가 계산해서 내려주고, 화면은 그대로 그린다.
+// 삭제할 수 있는지는 서버가 알려 주지 않으므로, 화면이 로그인한 사용자의 닉네임과 authorNickname을 비교해서 정한다.
+// (실제 삭제 권한은 서버가 다시 확인한다.)
 export interface PostDetail {
    id: string;
    title: string;
    content: string;
    tags: string[];
    authorNickname: string;
-   // 작성일(YYYY-MM-DD)
+   // 작성일(YYYY-MM-DD). 서버는 시각까지 주지만 화면은 날짜만 쓴다.
    createdAt: string;
    likeCount: number;
-   // 지금 보는 사람이 좋아요를 눌렀는지. (로그인하지 않았으면 false)
+   commentCount: number;
+   // 지금 보는 사람이 좋아요·북마크를 눌렀는지. (로그인하지 않았으면 항상 false)
    liked: boolean;
-   // 지금 보는 사람이 삭제할 수 있는지. (작성자만 true. 관리자 삭제는 아직 다루지 않는다.)
-   canDelete: boolean;
+   bookmarked: boolean;
    thumbnailUrl: string | null;
 }
 
