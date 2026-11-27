@@ -1,6 +1,6 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
-import { POST_SORTS, type MockMode, type PostSort } from '@/entities/post';
+import { POST_SORTS, type PostSort } from '@/entities/post';
 import { normalizeQueryInput, parseQuery, type ParsedQuery } from './parseQuery';
 
 export const COMMUNITY_VIEWS = ['card', 'list'] as const;
@@ -8,7 +8,6 @@ export type CommunityView = (typeof COMMUNITY_VIEWS)[number];
 
 const DEFAULT_SORT: PostSort = 'popular';
 const DEFAULT_VIEW: CommunityView = 'card';
-const MOCK_MODES: MockMode[] = ['empty', 'error', 'slow'];
 
 interface QueryState {
    q: string;
@@ -40,11 +39,6 @@ export function useCommunityQuery() {
       view: pick(searchParams.get('view'), COMMUNITY_VIEWS, DEFAULT_VIEW),
       page: parsePage(searchParams.get('page')),
    };
-   // TODO: mock 동작 확인용 스위치이다. 백엔드 연동 때 삭제한다. (운영 빌드에서는 무시한다.)
-   const mock =
-      process.env.NODE_ENV === 'production'
-         ? undefined
-         : MOCK_MODES.find((mode) => mode === searchParams.get('mock'));
 
    const { q, sort, view, page } = state;
 
@@ -56,13 +50,12 @@ export function useCommunityQuery() {
          if (next.sort !== DEFAULT_SORT) params.set('sort', next.sort);
          if (next.view !== DEFAULT_VIEW) params.set('view', next.view);
          if (next.page > 1) params.set('page', String(next.page));
-         if (mock) params.set('mock', mock);
 
          const query = params.toString();
          // 목록 스크롤은 페이지가 아니라 main 안에서 일어나므로 Next의 자동 스크롤은 쓰지 않는다.
          router[mode](query ? `${pathname}?${query}` : pathname, { scroll: false });
       },
-      [q, sort, view, page, mock, pathname, router],
+      [q, sort, view, page, pathname, router],
    );
 
    // 검색어나 정렬이 바뀌면 결과가 달라지므로 1페이지로 돌아간다.
@@ -80,11 +73,11 @@ export function useCommunityQuery() {
       [navigate],
    );
    const goToPage = useCallback((next: number) => navigate({ page: next }, 'push'), [navigate]);
-   // 요청한 페이지가 범위를 넘어 서버가 마지막 페이지로 맞춰 줬을 때, 주소도 맞춘다.
+   // 요청한 페이지가 범위를 넘어 화면이 마지막 페이지로 맞췄을 때, 주소도 맞춘다.
    const syncPage = useCallback((next: number) => navigate({ page: next }, 'replace'), [navigate]);
    const reset = useCallback(() => navigate({ q: '', page: 1 }, 'push'), [navigate]);
 
    const parsed: ParsedQuery = parseQuery(q);
 
-   return { ...state, parsed, mock, search, changeSort, changeView, goToPage, syncPage, reset };
+   return { ...state, parsed, search, changeSort, changeView, goToPage, syncPage, reset };
 }

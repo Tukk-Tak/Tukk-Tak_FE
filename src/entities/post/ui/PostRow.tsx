@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { formatDotDate, parseIsoDate } from '@/shared/lib/date';
+import type { ReactNode } from 'react';
 import type { PostSummary, TagHighlight } from '../types';
 import { PostStats } from './PostStats';
 import { PostThumbnail } from './PostThumbnail';
@@ -9,12 +9,12 @@ interface PostRowProps {
    post: PostSummary;
    highlight?: TagHighlight;
    onTagClick?: (tag: string) => void;
+   // 북마크 버튼 같은 동작 버튼. 목록 화면이 정해서 넣는다.
+   actions?: ReactNode;
 }
 
 // 목록형의 글 하나(행). 좁은 화면에서는 좋아요·댓글이 아래 줄로 내려간다.
-export function PostRow({ post, highlight, onTagClick }: PostRowProps) {
-   const createdAt = parseIsoDate(post.createdAt);
-
+export function PostRow({ post, highlight, onTagClick, actions }: PostRowProps) {
    return (
       // 행 전체가 링크라서, 마우스를 올리거나 키보드로 링크에 포커스가 오면 배경색을 바꿔 눌린다는 걸 알려 준다.
       // (카드형의 호버 그림자와 같은 역할이다.)
@@ -36,15 +36,14 @@ export function PostRow({ post, highlight, onTagClick }: PostRowProps) {
                </Link>
             </h3>
             <TagList tags={post.tags} highlight={highlight} onTagClick={onTagClick} />
-            <p className="truncate text-xs text-black/50">
-               {post.authorNickname}
-               {createdAt && ` · ${formatDotDate(createdAt)}`}
-            </p>
+            <p className="truncate text-xs text-black/50">{post.authorNickname}</p>
          </div>
 
          <PostStats
             likeCount={post.likeCount}
             commentCount={post.commentCount}
+            liked={post.liked}
+            actions={actions}
             className="col-span-2 sm:col-span-1"
          />
       </li>

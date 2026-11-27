@@ -1,7 +1,10 @@
 import type { PostSummary } from '../types';
 
-// TODO: 백엔드 API가 정해지면 삭제한다. UI 확인용 mock 데이터이다. (12개를 3번 반복해 26개를 만든다.)
-const BASE: Omit<PostSummary, 'id' | 'thumbnailUrl'>[] = [
+// TODO: 댓글(#3) mock이 글 작성자를 찾는 데만 쓴다. 댓글 API를 연동할 때 삭제한다. (12개를 3번 반복해 26개를 만든다.)
+// 목록 API가 연동되어 목록 화면은 더 이상 쓰지 않는다.
+type MockPost = Omit<PostSummary, 'thumbnailUrl' | 'liked' | 'bookmarked'> & { createdAt: string };
+
+const BASE: Omit<MockPost, 'id'>[] = [
    {
       title: '혼자 운영하는 가게의 메뉴판 정리 팁',
       tags: ['메뉴판', '운영팁'],
@@ -100,7 +103,7 @@ const BASE: Omit<PostSummary, 'id' | 'thumbnailUrl'>[] = [
    },
 ];
 
-export const MOCK_POSTS: PostSummary[] = Array.from({ length: 26 }, (_, index) => {
+export const MOCK_POSTS: MockPost[] = Array.from({ length: 26 }, (_, index) => {
    const base = BASE[index % BASE.length];
    const round = Math.floor(index / BASE.length);
    return {
@@ -110,7 +113,6 @@ export const MOCK_POSTS: PostSummary[] = Array.from({ length: 26 }, (_, index) =
       likeCount: Math.max(0, base.likeCount - round * 3),
       createdAt: shiftDate(base.createdAt, -round * 15),
       id: `post-${index + 1}`,
-      thumbnailUrl: null,
    };
 });
 
