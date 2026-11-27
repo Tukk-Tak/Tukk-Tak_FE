@@ -14,7 +14,6 @@ export const MENU_TEMPLATE: Template = {
          border: '#e5e7eb',
          surface: '#f9fafb',
          primary: '#4b6b5c',
-         onPrimary: '#ffffff',
          radius: '6px',
       },
       rows: [

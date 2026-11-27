@@ -24,7 +24,7 @@ export function SiteRenderer({
    return (
       <div
          style={themeToCssVars(site.theme)}
-         className="bg-site-bg text-site-text wrap-anywhere break-keep @container"
+         className="bg-site-bg font-site text-site-text wrap-anywhere break-keep @container"
       >
          <div className="flex flex-col gap-10 px-6 py-10 @3xl:gap-16 @3xl:px-14 @3xl:py-16">
             {site.rows.map((row) => (

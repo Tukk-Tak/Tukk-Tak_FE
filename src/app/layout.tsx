@@ -1,6 +1,14 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Noto_Sans_KR, Outfit } from 'next/font/google';
+import {
+   Do_Hyeon,
+   Gaegu,
+   Gowun_Dodum,
+   Jua,
+   Noto_Sans_KR,
+   Noto_Serif_KR,
+   Outfit,
+} from 'next/font/google';
 import { SessionExpiredNotice } from '@/entities/user/ui/SessionExpiredNotice';
 import { ToastProvider } from '@/shared/ui/ToastProvider';
 
@@ -17,6 +25,47 @@ const outfit = Outfit({
    display: 'swap',
 });
 
+// 사용자 사이트에서 고를 수 있는 글꼴. 쓰는 사이트에서만 필요한 조각을 내려받도록 미리 불러오기(preload)는 끈다.
+// 변수 이름은 entities/site/model/fonts.ts 의 SITE_FONTS 와 맞춰야 한다.
+const notoSerifKr = Noto_Serif_KR({
+   subsets: ['latin'],
+   variable: '--font-noto-serif-kr',
+   display: 'swap',
+   preload: false,
+});
+const gowunDodum = Gowun_Dodum({
+   subsets: ['latin'],
+   weight: '400',
+   variable: '--font-gowun-dodum',
+   display: 'swap',
+   preload: false,
+});
+const gaegu = Gaegu({
+   subsets: ['latin'],
+   weight: ['400', '700'],
+   variable: '--font-gaegu',
+   display: 'swap',
+   preload: false,
+});
+const jua = Jua({
+   subsets: ['latin'],
+   weight: '400',
+   variable: '--font-jua',
+   display: 'swap',
+   preload: false,
+});
+const doHyeon = Do_Hyeon({
+   subsets: ['latin'],
+   weight: '400',
+   variable: '--font-do-hyeon',
+   display: 'swap',
+   preload: false,
+});
+
+const FONT_VARIABLES = [notoSansKr, outfit, notoSerifKr, gowunDodum, gaegu, jua, doHyeon]
+   .map((font) => font.variable)
+   .join(' ');
+
 export const metadata: Metadata = {
    title: '뚝딱',
    description:
@@ -29,7 +78,7 @@ export default function RootLayout({
    children: React.ReactNode;
 }>) {
    return (
-      <html lang="ko" className={`${notoSansKr.variable} ${outfit.variable}`}>
+      <html lang="ko" className={FONT_VARIABLES}>
          <body>
             <ToastProvider>
                {children}

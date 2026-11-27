@@ -3,10 +3,10 @@
 import { Check, Plus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAiDraftForm } from '../model/AiDraftFormContext';
-import { getCheckColor } from '../model/color';
+import { getCheckColor } from '@/shared/lib/color';
+import { ColorPickerModal } from '@/shared/ui/ColorPickerModal';
 import { MAX_MOOD_COLORS, PALETTE_COLORS } from '../model/options';
 import { getCustomColors } from '../model/values';
-import { ColorPickerModal } from './ColorPickerModal';
 
 interface SwatchProps {
    hex: string;
@@ -134,7 +134,9 @@ export function MoodColors() {
 
          {pickerOpen && (
             <ColorPickerModal
-               selectedColors={selected}
+               title="색 직접 고르기"
+               initialColor="#E8622C"
+               takenColors={selected}
                onConfirm={addCustom}
                onClose={() => setPickerOpen(false)}
             />

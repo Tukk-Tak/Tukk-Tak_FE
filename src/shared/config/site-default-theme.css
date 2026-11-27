@@ -15,6 +15,6 @@
    --color-site-border: var(--site-border);
    --color-site-surface: var(--site-surface);
    --color-site-primary: var(--site-primary);
-   --color-site-on-primary: var(--site-on-primary);
    --radius-site: var(--site-radius);
+   --font-site: var(--site-font);
 }

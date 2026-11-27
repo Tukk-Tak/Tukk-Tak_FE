@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { ThemeConfig } from '../types';
+import { DEFAULT_FONT_ID, siteFontFamily } from './fonts';
 
 // 테마를 고르기 전의 기본 모습. 흰 바탕에 회색 테두리, 강조색은 진한 회색이다.
 export const DEFAULT_THEME: Required<ThemeConfig> = {
@@ -9,8 +10,8 @@ export const DEFAULT_THEME: Required<ThemeConfig> = {
    border: '#d1d5db',
    surface: '#ffffff',
    primary: '#374151',
-   onPrimary: '#ffffff',
    radius: '6px',
+   font: DEFAULT_FONT_ID,
 };
 
 // 저장 형태(의미 키)와 CSS 변수 이름의 대응. 변수 이름을 바꿀 때는 여기만 고친다.
@@ -21,8 +22,8 @@ const CSS_VAR_NAME: Record<keyof ThemeConfig, string> = {
    border: '--site-border',
    surface: '--site-surface',
    primary: '--site-primary',
-   onPrimary: '--site-on-primary',
    radius: '--site-radius',
+   font: '--site-font',
 };
 
 // 허용하는 값의 형식. 서버 렌더링 때 값이 style 속성에 그대로 들어가므로,
@@ -38,8 +39,8 @@ const VALUE_PATTERN: Record<keyof ThemeConfig, RegExp> = {
    border: HEX_COLOR,
    surface: HEX_COLOR,
    primary: HEX_COLOR,
-   onPrimary: HEX_COLOR,
    radius: PX_LENGTH,
+   font: /^[a-z-]+$/,
 };
 
 // 사이트 래퍼의 style에 넣을 CSS 변수들. 빠졌거나 형식이 맞지 않는 값은 기본값으로 채운다.
@@ -50,5 +51,8 @@ export function themeToCssVars(theme: ThemeConfig): CSSProperties {
       vars[CSS_VAR_NAME[key]] =
          value !== undefined && VALUE_PATTERN[key].test(value) ? value : DEFAULT_THEME[key];
    }
+   // 글꼴은 id를 font-family 값으로 바꿔서 넣는다. 목록에 없는 id이면 기본 글꼴을 쓴다.
+   vars[CSS_VAR_NAME.font] =
+      siteFontFamily(theme.font) ?? siteFontFamily(DEFAULT_THEME.font) ?? 'sans-serif';
    return vars as CSSProperties;
 }

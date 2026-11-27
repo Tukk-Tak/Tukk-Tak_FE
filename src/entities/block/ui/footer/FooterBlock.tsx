@@ -113,7 +113,7 @@ function SocialLinks({ links }: { links: SocialLink[] }) {
          href={href}
          target="_blank"
          rel="noopener noreferrer"
-         className="hover:text-site-text"
+         className="hover:text-site-primary"
       >
          {label}
       </a>
