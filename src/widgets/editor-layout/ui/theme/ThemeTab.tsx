@@ -7,6 +7,7 @@ import { normalizeHex } from '@/shared/lib/color';
 import { ColorPickerModal } from '@/shared/ui/ColorPickerModal';
 import { ScrollArea } from '@/shared/ui/ScrollArea';
 import { EditorSection } from '../element/EditorSection';
+import { useSliderBatch } from '../useSliderBatch';
 import { COLOR_FIELDS, RADIUS_RANGE, parseRadius, pickColors, type ColorKey } from './themeFields';
 
 // 사이트 테마 탭: 색 6개, 모서리 둥글기, 글꼴. 바꾸면 모든 블록에 한 번에 적용되고 캔버스에 바로 보인다.
@@ -14,6 +15,8 @@ import { COLOR_FIELDS, RADIUS_RANGE, parseRadius, pickColors, type ColorKey } fr
 export function ThemeTab() {
    const theme = useEditorSite((state) => state.site.theme);
    const updateTheme = useEditorSite((state) => state.updateTheme);
+   // 둥글기 슬라이더를 끄는 동안의 변경은 되돌리기 한 번으로 묶는다.
+   const batchHandlers = useSliderBatch();
    const [picking, setPicking] = useState<ColorKey | null>(null);
 
    const colors = pickColors(theme, DEFAULT_THEME);
@@ -74,6 +77,7 @@ export function ThemeTab() {
                   max={RADIUS_RANGE.max}
                   step={RADIUS_RANGE.step}
                   value={radius}
+                  {...batchHandlers}
                   onChange={(event) => updateTheme({ radius: `${event.target.value}px` })}
                   className="mt-2 w-full cursor-pointer accent-brand-orange"
                />
