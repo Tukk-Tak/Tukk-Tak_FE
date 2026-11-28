@@ -11,10 +11,10 @@ import { ScrollArea } from '@/shared/ui/ScrollArea';
 import { useToast } from '@/shared/ui/toastContext';
 import { NotificationRow } from './NotificationRow';
 
-const DELETE_FAILED_MESSAGE = '알림을 지우지 못했어요. 잠시 후 다시 시도해주세요';
-
 // 헤더의 알림 벨과 드롭다운. 읽지 않은 알림이 있으면 벨에 점이 뜬다.
+// - 목록은 드롭다운을 열 때 받는다. (점은 목록 없이 "읽지 않은 알림이 있는지"로 정한다.)
 // - 드롭다운을 여는 동안은 "신규" 표시를 그대로 보여 주고, 닫을 때 모두 읽음으로 바꾼다.
+// - 지우기에 실패하면 서버가 준 문구를 그대로 토스트로 보여 준다.
 // - 전체 삭제는 확인 모달을 거친다. 모달은 드롭다운 밖에 두어서, 모달을 누르는 것이 바깥 클릭으로 처리되지 않게 한다.
 export function NotificationMenu() {
    const toast = useToast();
@@ -23,27 +23,41 @@ export function NotificationMenu() {
    const [open, setOpen] = useState(false);
    const [confirming, setConfirming] = useState(false);
    const { run, pending } = useSingleFlight();
-   const { status, items, message, unreadCount, retry, remove, removeAll, markAllRead } =
-      useNotifications();
+   const {
+      status,
+      items,
+      message,
+      hasUnread,
+      unreadCount,
+      refresh,
+      remove,
+      removeAll,
+      markAllRead,
+   } = useNotifications();
+
+   const openMenu = () => {
+      setOpen(true);
+      refresh();
+   };
 
    const close = useCallback(() => {
       setOpen(false);
-      if (unreadCount > 0) markAllRead();
-   }, [unreadCount, markAllRead]);
+      markAllRead();
+   }, [markAllRead]);
 
    // 확인 모달이 떠 있는 동안에는 Esc와 바깥 클릭을 모달이 맡는다.
    useDismissibleMenu(open, rootRef, close, confirming);
 
    const handleRemove = async (id: string) => {
-      const ok = await remove(id);
-      if (!ok) toast.show(DELETE_FAILED_MESSAGE, { tone: 'error' });
+      const failure = await remove(id);
+      if (failure) toast.show(failure, { tone: 'error' });
    };
 
    const handleRemoveAll = () => {
       setConfirming(false);
       void run(async () => {
-         const ok = await removeAll();
-         if (!ok) toast.show(DELETE_FAILED_MESSAGE, { tone: 'error' });
+         const failure = await removeAll();
+         if (failure) toast.show(failure, { tone: 'error' });
       });
    };
 
@@ -51,15 +65,21 @@ export function NotificationMenu() {
       <div ref={rootRef} className="relative">
          <button
             type="button"
-            aria-label={unreadCount > 0 ? `알림, 읽지 않은 알림 ${unreadCount}개` : '알림'}
+            aria-label={
+               !hasUnread
+                  ? '알림'
+                  : unreadCount !== null
+                    ? `알림, 읽지 않은 알림 ${unreadCount}개`
+                    : '알림, 읽지 않은 알림 있음'
+            }
             aria-haspopup="dialog"
             aria-expanded={open}
             aria-controls={open ? panelId : undefined}
-            onClick={() => (open ? close() : setOpen(true))}
+            onClick={() => (open ? close() : openMenu())}
             className="relative flex size-9 cursor-pointer items-center justify-center rounded-full border border-black/10 bg-white"
          >
             <Bell aria-hidden className="size-4.5 text-black/70" />
-            {unreadCount > 0 && (
+            {hasUnread && (
                <span
                   aria-hidden
                   className="absolute top-1.5 right-2.5 size-1.5 rounded-full bg-red-500"
@@ -110,7 +130,7 @@ export function NotificationMenu() {
                      className="flex flex-col items-center gap-3 px-5 py-10 text-center"
                   >
                      <p className="text-sm text-black/60">{message}</p>
-                     <Button variant="outline" size="field" onClick={retry}>
+                     <Button variant="outline" size="field" onClick={refresh}>
                         다시 시도
                      </Button>
                   </div>
