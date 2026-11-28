@@ -228,3 +228,50 @@ export function changeVariant(
 
    return { rows: unpairRow(changed, found.row.id, newRowId), unpaired: true };
 }
+
+// 같은 칸에 이어지는 입력(글자 입력 등)인지 가려내는 키. 키가 같은 연속 변경은 되돌리기 한 번으로 묶는다.
+// 묶으면 안 되는 변경(항목 추가·삭제, 순서 바꾸기, 사진 바꾸기)이면 undefined 이다.
+// - 글자나 숫자 같은 값: 항목 이름이 키이다.
+// - 목록: 같은 길이에서 항목 하나만 바뀌었을 때만 키가 있고, 키에는 그 항목과 바뀐 값의 이름이 들어간다.
+//   (이름을 고치다 가격을 고치면 다른 입력이므로 따로 기록된다)
+export function getTypingKey(
+   rows: Row[],
+   sectionId: string,
+   patch: ContentPatch,
+): string | undefined {
+   const section = findSection(rows, sectionId)?.section;
+   if (!section) return undefined;
+   const content = section.content as unknown as Record<string, unknown>;
+
+   const parts: string[] = [];
+   for (const [field, next] of Object.entries(patch)) {
+      const previous = content[field];
+      if (Array.isArray(next)) {
+         if (!Array.isArray(previous) || previous.length !== next.length) return undefined;
+         const changed = next.flatMap((item, index) => (item === previous[index] ? [] : [index]));
+         if (changed.length !== 1) return undefined;
+         const index = changed[0];
+         const before = previous[index];
+         const after = next[index];
+         if (typeof after === 'object' && after !== null && typeof before === 'object') {
+            const record = after as Record<string, unknown>;
+            const props = Object.keys(record)
+               .filter((prop) => record[prop] !== (before as Record<string, unknown>)[prop])
+               .sort();
+            // 값이 객체인 칸(사진 등)이 바뀐 것이면 글자 입력으로 보지 않는다.
+            if (props.some((prop) => typeof record[prop] === 'object' && record[prop] !== null)) {
+               return undefined;
+            }
+            const itemId = typeof record.id === 'string' ? record.id : index;
+            parts.push(`${field}:${itemId}:${props.join('+')}`);
+         } else {
+            parts.push(`${field}:${index}`);
+         }
+      } else if (typeof next === 'object' && next !== null) {
+         return undefined;
+      } else {
+         parts.push(field);
+      }
+   }
+   return `${sectionId}:${parts.sort().join(',')}`;
+}

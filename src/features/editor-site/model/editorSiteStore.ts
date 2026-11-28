@@ -4,6 +4,7 @@ import type { SiteContent, ThemeConfig } from '@/entities/site';
 import {
    addSection,
    changeVariant,
+   getTypingKey,
    moveSectionToRow,
    pairSection,
    removeSection,
@@ -146,13 +147,8 @@ export function createEditorSiteStore(initialSite: SiteContent) {
             const { site } = get();
             const rows = updateSectionContent(site.rows, sectionId, patch);
             if (rows === site.rows) return;
-            // 같은 블록의 같은 항목에 이어지는 변경(글자 입력 등)은 한 번의 편집으로 묶는다.
-            // 목록은 항목 수가 키에 들어가서, 항목을 더하거나 지우면 새 편집으로 나뉜다.
-            const fields = Object.entries(patch)
-               .map(([key, value]) => (Array.isArray(value) ? `${key}[${value.length}]` : key))
-               .sort()
-               .join(',');
-            commit({ ...site, rows }, `${sectionId}:${fields}`);
+            // 같은 칸에 이어지는 입력(글자 입력 등)은 한 번의 편집으로 묶는다. (묶는 기준은 getTypingKey 참고)
+            commit({ ...site, rows }, getTypingKey(site.rows, sectionId, patch));
          },
          updateTheme: (patch) => {
             const { site } = get();
