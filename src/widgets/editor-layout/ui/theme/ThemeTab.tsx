@@ -14,6 +14,9 @@ import { COLOR_FIELDS, RADIUS_RANGE, parseRadius, pickColors, type ColorKey } fr
 export function ThemeTab() {
    const theme = useEditorSite((state) => state.site.theme);
    const updateTheme = useEditorSite((state) => state.updateTheme);
+   // 둥글기 슬라이더를 끄는 동안의 변경은 되돌리기 한 번으로 묶는다.
+   const beginBatch = useEditorSite((state) => state.beginBatch);
+   const endBatch = useEditorSite((state) => state.endBatch);
    const [picking, setPicking] = useState<ColorKey | null>(null);
 
    const colors = pickColors(theme, DEFAULT_THEME);
@@ -74,6 +77,11 @@ export function ThemeTab() {
                   max={RADIUS_RANGE.max}
                   step={RADIUS_RANGE.step}
                   value={radius}
+                  onPointerDown={beginBatch}
+                  onPointerUp={endBatch}
+                  onKeyDown={beginBatch}
+                  onKeyUp={endBatch}
+                  onBlur={endBatch}
                   onChange={(event) => updateTheme({ radius: `${event.target.value}px` })}
                   className="mt-2 w-full cursor-pointer accent-brand-orange"
                />

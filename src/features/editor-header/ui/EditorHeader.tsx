@@ -17,12 +17,25 @@ interface EditorHeaderProps {
    mode: EditorMode;
    onModeChange: (mode: EditorMode) => void;
    isDirty: boolean; // 저장하지 않은 변경이 있는지. 안내 문구와 저장 버튼의 점이 함께 따른다.
+   // 되돌리기 / 다시하기. 되돌릴 내용이 없으면 버튼이 비활성화된다.
+   canUndo: boolean;
+   canRedo: boolean;
+   onUndo: () => void;
+   onRedo: () => void;
 }
 
-// 실행 취소·다시 실행, 저장, 배포는 아직 모양만 있고 동작하지 않는다.
+// 저장과 배포는 아직 모양만 있고 동작하지 않는다. 실행 취소·다시 실행은 편집 모드에서만 쓸 수 있다.
 // 미리보기에서는 편집과 관련된 오른쪽 영역(저장 안내, 저장, 배포)을 숨긴다.
 // 로고를 누르면 메인으로 가고, 저장하지 않은 변경사항이 있으면 먼저 나가도 되는지 묻는다.
-export function EditorHeader({ mode, onModeChange, isDirty }: EditorHeaderProps) {
+export function EditorHeader({
+   mode,
+   onModeChange,
+   isDirty,
+   canUndo,
+   canRedo,
+   onUndo,
+   onRedo,
+}: EditorHeaderProps) {
    const router = useRouter();
    const [leaveModalOpen, setLeaveModalOpen] = useState(false);
 
@@ -47,10 +60,18 @@ export function EditorHeader({ mode, onModeChange, isDirty }: EditorHeaderProps)
             </Link>
             <span aria-hidden className="h-8 w-px bg-brand-line" />
             <div className="flex items-center gap-1">
-               <HistoryButton label="실행 취소">
+               <HistoryButton
+                  label="실행 취소"
+                  disabled={mode !== 'edit' || !canUndo}
+                  onClick={onUndo}
+               >
                   <Undo2 aria-hidden className="size-4" />
                </HistoryButton>
-               <HistoryButton label="다시 실행">
+               <HistoryButton
+                  label="다시 실행"
+                  disabled={mode !== 'edit' || !canRedo}
+                  onClick={onRedo}
+               >
                   <Redo2 aria-hidden className="size-4" />
                </HistoryButton>
             </div>
@@ -87,13 +108,25 @@ export function EditorHeader({ mode, onModeChange, isDirty }: EditorHeaderProps)
    );
 }
 
-function HistoryButton({ label, children }: { label: string; children: React.ReactNode }) {
+function HistoryButton({
+   label,
+   disabled,
+   onClick,
+   children,
+}: {
+   label: string;
+   disabled: boolean;
+   onClick: () => void;
+   children: React.ReactNode;
+}) {
    return (
       <button
          type="button"
-         disabled
+         disabled={disabled}
          aria-label={label}
-         className="flex size-9 items-center justify-center rounded-lg text-black/30 disabled:cursor-not-allowed"
+         title={label}
+         onClick={onClick}
+         className="flex size-9 cursor-pointer items-center justify-center rounded-lg text-black/70 transition-colors not-disabled:hover:bg-black/5 disabled:cursor-not-allowed disabled:text-black/30"
       >
          {children}
       </button>
