@@ -1,21 +1,21 @@
-import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import { NOTIFICATION_ERROR, type NotificationList } from '../types';
-import { getStore, readNotificationMock } from './mockNotificationStore';
+import { ApiError, apiFetch } from '@/shared/lib/apiClient';
+import type { NotificationData } from '../types';
+import { toNotification, type NotificationRaw } from './notificationMapper';
 
-// TODO: 백엔드 API가 정해지면 apiFetch 호출로 교체한다. (GET /notifications) 최신순으로 한 번에 받는다.
-// mock 규칙: ?nmock=empty 는 알림 없음, ?nmock=error 는 불러오기 실패, ?nmock=slow 는 느린 응답이다.
-export async function getNotifications(): Promise<NotificationList> {
-   const mock = readNotificationMock();
-   await mockDelay(mock === 'slow' ? 3000 : 400);
-
-   if (mock === 'error') {
-      throw new ApiError(
-         NOTIFICATION_ERROR.LOAD_FAILED,
-         '알림을 불러오지 못했어요. 잠시 후 다시 시도해주세요',
-      );
+// 알림 목록 조회 GET /notification
+// 최신순(createdAt 내림차순)으로 페이지 없이 한 번에 받고, 알림이 없으면 빈 배열이다. (예외는 인증 오류 401·403뿐이다.)
+// 서버가 오래된 알림을 정리하므로 페이지를 나누지 않는다.
+export async function getNotifications(): Promise<NotificationData[]> {
+   const data = await apiFetch<NotificationRaw[] | null>('/notification');
+   if (!Array.isArray(data)) {
+      throw new ApiError('UNKNOWN', '알림을 불러오지 못했어요. 잠시 후 다시 시도해주세요');
    }
-   if (mock === 'empty') return { notifications: [] };
+   return data.map(toNotification);
+}
 
-   return { notifications: [...getStore()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
+// 읽지 않은 알림이 있는지 GET /notification/exists
+// true이면 벨에 빨간 점을 띄운다. 목록을 받지 않고도 점만 정할 수 있다.
+export async function fetchHasUnreadNotification(): Promise<boolean> {
+   const data = await apiFetch<boolean | null>('/notification/exists');
+   return data === true;
 }

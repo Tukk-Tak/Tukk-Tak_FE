@@ -1,33 +1,18 @@
-﻿import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import { NOTIFICATION_ERROR } from '../types';
-import { getStore, readNotificationMock, setStore } from './mockNotificationStore';
+﻿import { apiFetch } from '@/shared/lib/apiClient';
 
-// TODO: 백엔드 API가 정해지면 apiFetch 호출로 교체한다.
-// mock 규칙: ?nmock=deletefail 이면 삭제가 실패한다. 그 밖에는 항상 성공한다.
-
-// 알림 하나를 지운다. (DELETE /notifications/{id})
-export async function deleteNotification(id: string): Promise<void> {
-   await mockDelay(300);
-   failIfMockDeleteFail();
-   setStore(getStore().filter((item) => item.id !== id));
+// 알림 읽음 처리 PATCH /notification/{notificationId}/read
+// 한 번에 하나만 읽음으로 바꿀 수 있다. 없는 알림은 404, 남의 알림은 403이다.
+export async function markNotificationRead(id: string): Promise<void> {
+   await apiFetch<null>(`/notification/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
 }
 
-// 알림을 모두 지운다. (DELETE /notifications)
-export async function deleteAllNotifications(): Promise<void> {
-   await mockDelay(400);
-   failIfMockDeleteFail();
-   setStore([]);
-}
-
-// 알림을 모두 읽음으로 바꾼다. (PATCH /notifications/read)
-export async function markAllNotificationsRead(): Promise<void> {
-   await mockDelay(200);
-   setStore(getStore().map((item) => ({ ...item, isNew: false })));
-}
-
-function failIfMockDeleteFail() {
-   if (readNotificationMock() === 'deletefail') {
-      throw new ApiError(NOTIFICATION_ERROR.DELETE_FAILED, '알림을 지우지 못했어요');
-   }
+// 알림 삭제 DELETE /notification?ids=1,2,3
+// 한 개여도 되고 여러 개여도 되며, 0개는 400이라 부르지 않는다.
+// - 내 알림과 남의 알림이 섞이면 서버가 오류 없이 내 것만 지운다. (전부 남의 것이면 403, 없는 id가 섞이면 404)
+// - 실패하면 서버 message를 그대로 보여 준다.
+export async function deleteNotifications(ids: string[]): Promise<void> {
+   if (ids.length === 0) return;
+   await apiFetch<null>(`/notification?ids=${ids.map(encodeURIComponent).join(',')}`, {
+      method: 'DELETE',
+   });
 }
