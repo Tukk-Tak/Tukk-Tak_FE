@@ -4,7 +4,9 @@ import { fetchHasUnreadNotification, getNotifications } from '../api/getNotifica
 import { deleteNotifications, markNotificationRead } from '../api/updateNotifications';
 import type { NotificationData } from '../types';
 
-// 한 번 불러온 결과. request가 지금 요청 번호와 같을 때만 "이번에 받은 결과"이다.
+// 목록을 불러온 기록. request는 이 기록을 만든 요청 번호이고, 지금 요청 번호와 같을 때만 "이번에 받은 결과"이다.
+// items는 마지막으로 성공해서 받은 목록이다. 이번 조회가 실패해도(message가 있어도) 지우지 않는다.
+// 오류와 마지막 성공 목록을 분리해 두어야, 조회가 실패했을 때 읽지 않음 표시(빨간 점)가 옛 값으로 되돌아가지 않는다.
 interface Loaded {
    request: number;
    items: NotificationData[] | null;
@@ -37,6 +39,9 @@ export function useNotifications() {
    const [existsUnread, setExistsUnread] = useState(false);
    // 같은 알림의 삭제 요청이 두 번 가지 않게 하는 동기 가드
    const deletingRef = useRef(new Set<string>());
+   // 이 화면에서 읽음으로 바꾼 알림 id. 읽음 처리 전에 시작된 목록 응답이 늦게 도착해도 읽은 알림이 다시 신규로 보이지 않게,
+   // 목록을 저장할 때 이 id는 읽음으로 덮어쓴다. (한 번 읽은 알림은 다시 읽지 않음이 되지 않는다.)
+   const readIdsRef = useRef(new Set<string>());
 
    useEffect(() => {
       let ignore = false;
@@ -58,11 +63,22 @@ export function useNotifications() {
       let ignore = false;
 
       getNotifications()
-         .then((items) => {
-            if (!ignore) setLoaded({ request, items, message: null });
+         .then((received) => {
+            if (ignore) return;
+            const items = received.map((item) =>
+               item.isNew && readIdsRef.current.has(item.id) ? { ...item, isNew: false } : item,
+            );
+            setLoaded({ request, items, message: null });
          })
          .catch((error: unknown) => {
-            if (!ignore) setLoaded({ request, items: null, message: toApiError(error).message });
+            // 실패해도 마지막으로 받은 목록은 남긴다.
+            if (!ignore) {
+               setLoaded((prev) => ({
+                  request,
+                  items: prev?.items ?? null,
+                  message: toApiError(error).message,
+               }));
+            }
          });
 
       return () => {
@@ -72,10 +88,10 @@ export function useNotifications() {
 
    const current = loaded?.request === request ? loaded : null;
    // 다시 받는 동안에는 이전에 받은 목록을 그대로 보여 준다. (열 때마다 깜빡이지 않게)
-   const items = (current?.items ?? loaded?.items) || NO_ITEMS;
+   const items = loaded?.items || NO_ITEMS;
    let status: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
    if (request > 0) {
-      if (current) status = current.items ? 'ready' : 'error';
+      if (current) status = current.message !== null ? 'error' : 'ready';
       else status = loaded?.items ? 'ready' : 'loading';
    }
 
@@ -105,8 +121,11 @@ export function useNotifications() {
             if (error instanceof ApiError && error.status === 404) {
                refresh();
             } else {
+               // 삭제하는 사이에 목록을 다시 받아 이미 이 알림이 들어와 있으면 중복해서 되살리지 않는다.
                setLoaded((prev) =>
-                  prev?.items ? { ...prev, items: [...prev.items, target].sort(byNewest) } : prev,
+                  prev?.items && !prev.items.some((item) => item.id === target.id)
+                     ? { ...prev, items: [...prev.items, target].sort(byNewest) }
+                     : prev,
                );
             }
             return failureMessage(error);
@@ -117,31 +136,43 @@ export function useNotifications() {
       [items, refresh],
    );
 
-   // 알림을 모두 지운다. 받아 둔 목록 전체를 한 번에 지우고, 서버가 끝낸 뒤에 목록을 비운다.
+   // 알림을 모두 지운다. 받아 둔 목록 전체를 한 번에 지우고, 서버가 끝낸 뒤에 화면에서도 지운다.
+   // 요청에 보낸 알림만 지운다. (요청하는 사이에 새로 받은 알림은 서버에 남아 있으므로 화면에도 남긴다.)
    // 성공하면 null, 실패하면 보여 줄 문구를 돌려준다.
    const removeAll = useCallback(async (): Promise<string | null> => {
+      const ids = items.map((item) => item.id);
       try {
-         await deleteNotifications(items.map((item) => item.id));
+         await deleteNotifications(ids);
       } catch (error) {
          if (error instanceof ApiError && error.status === 404) refresh();
          return failureMessage(error);
       }
-      setLoaded((prev) => (prev?.items ? { ...prev, items: [] } : prev));
+      const removed = new Set(ids);
+      setLoaded((prev) =>
+         prev?.items
+            ? { ...prev, items: prev.items.filter((item) => !removed.has(item.id)) }
+            : prev,
+      );
       return null;
    }, [items, refresh]);
 
    // 읽지 않은 알림을 모두 읽음으로 바꾼다. 화면은 바로 바꾸고, 서버는 하나씩만 읽음 처리를 받으므로 읽지 않은 것마다 요청을 보낸다.
-   // 요청이 실패해도 사용자에게 알리지 않는다. (다음에 불러올 때 다시 신규로 보일 뿐이다.)
+   // 요청이 실패해도 사용자에게 알리지 않는다. (읽음으로 기록해 둔 것을 풀어서, 다음에 불러올 때 다시 신규로 보일 뿐이다.)
    const markAllRead = useCallback(() => {
       const unreadIds = items.filter((item) => item.isNew).map((item) => item.id);
       if (unreadIds.length === 0) return;
 
+      for (const id of unreadIds) readIdsRef.current.add(id);
       setLoaded((prev) =>
          prev?.items
             ? { ...prev, items: prev.items.map((item) => ({ ...item, isNew: false })) }
             : prev,
       );
-      void Promise.allSettled(unreadIds.map((id) => markNotificationRead(id)));
+      void Promise.allSettled(unreadIds.map((id) => markNotificationRead(id))).then((results) => {
+         results.forEach((result, index) => {
+            if (result.status === 'rejected') readIdsRef.current.delete(unreadIds[index]);
+         });
+      });
    }, [items]);
 
    return {
