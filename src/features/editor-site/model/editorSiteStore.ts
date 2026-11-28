@@ -1,6 +1,6 @@
 import { createStore } from 'zustand';
 import { createSection, type BlockType } from '@/entities/block';
-import type { SiteContent } from '@/entities/site';
+import type { SiteContent, ThemeConfig } from '@/entities/site';
 import {
    addSection,
    changeVariant,
@@ -34,6 +34,8 @@ export interface EditorSiteState {
 
    // 블록 내용의 일부를 바꾼다. 입력할 때마다 불리므로 바뀐 블록만 새 객체가 되고 나머지는 그대로 유지된다.
    updateContent: (sectionId: string, patch: ContentPatch) => void;
+   // 사이트 테마의 일부를 바꾼다. 이미 같은 값이면 상태를 바꾸지 않는다.
+   updateTheme: (patch: ThemeConfig) => void;
    // 블록의 구조를 바꾼다. 전체 폭 전용 구조로 바꿔서 나란히 놓은 상태가 풀렸으면 true.
    setVariant: (sectionId: string, variant: string) => boolean;
 }
@@ -69,6 +71,15 @@ export function createEditorSiteStore(initialSite: SiteContent) {
          unpairRow: (rowId) => updateRows((rows) => unpairRow(rows, rowId, newId('row'))),
          updateContent: (sectionId, patch) =>
             updateRows((rows) => updateSectionContent(rows, sectionId, patch)),
+         updateTheme: (patch) =>
+            set((state) => {
+               const unchanged = Object.entries(patch).every(
+                  ([key, value]) => state.site.theme[key as keyof ThemeConfig] === value,
+               );
+               return unchanged
+                  ? state
+                  : { site: { ...state.site, theme: { ...state.site.theme, ...patch } } };
+            }),
          setVariant: (sectionId, variant) => {
             const result = changeVariant(get().site.rows, sectionId, variant, newId('row'));
             updateRows(() => result.rows);

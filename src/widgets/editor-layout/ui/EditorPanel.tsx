@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef, type KeyboardEvent } from 'react';
-import { ScrollArea } from '@/shared/ui/ScrollArea';
 import { ElementTab } from './ElementTab';
+import { ThemeTab } from './theme/ThemeTab';
 import { StructureTab } from './structure/StructureTab';
 import type { PanelTab } from '../types';
 
@@ -17,7 +17,7 @@ interface EditorPanelProps {
    onTabChange: (tab: PanelTab) => void;
 }
 
-// 오른쪽 패널의 틀. 탭 본문은 아직 비어 있고, 각 탭의 기능을 만들 때 채운다.
+// 오른쪽 패널의 틀. 탭 본문은 각 탭 컴포넌트가 채운다.
 // 키보드: 선택된 탭에만 Tab으로 멈추고, ← → 로 탭을 옮기며 Home/End 로 처음과 끝 탭으로 간다.
 // 패널 세 개를 모두 두고 선택되지 않은 것만 숨겨서, 모든 탭의 aria-controls 가 실제 패널을 가리키게 한다.
 export function EditorPanel({ tab, onTabChange }: EditorPanelProps) {
@@ -78,10 +78,7 @@ export function EditorPanel({ tab, onTabChange }: EditorPanelProps) {
                ) : value === 'structure' ? (
                   <StructureTab active={tab === 'structure'} />
                ) : (
-                  // 탭 본문이 길면 이 안에서만 스크롤된다. 여백(p-6)은 끝까지 스크롤했을 때 사라지지 않게 안쪽에 둔다.
-                  <ScrollArea className="h-full" contentClassName="p-6">
-                     <p className="text-sm text-black/40">준비 중이에요.</p>
-                  </ScrollArea>
+                  <ThemeTab />
                )}
             </div>
          ))}

@@ -1,21 +1,9 @@
-import { ApiError } from '@/shared/lib/apiClient';
-import { mockDelay } from '@/shared/lib/mockDelay';
-import { COMMENT_ERROR } from '../commentTypes';
-import { currentViewer, findRecord } from './mockCommentStore';
+import { apiFetch } from '@/shared/lib/apiClient';
 
-// TODO: 백엔드 API가 정해지면 교체한다. (DELETE /comments/{id})
-// 댓글을 삭제한다. 삭제하면 "삭제된 댓글입니다."로 남고, 아래 답글은 그대로 남는다.
-// 삭제 버튼을 보여 주는 것(canDelete)과 별개로, 서버가 본인(또는 관리자)인지 다시 확인한다. (관리자 삭제는 아직 다루지 않는다.)
+// 댓글·대댓글 삭제 DELETE /post/comment/{commentId}
+// 소프트 딜리트라서 삭제한 뒤에는 "삭제된 댓글입니다."로 남고(아래 대댓글이 있으면), 없으면 목록에서 빠진다.
+// 댓글 작성자와 관리자만 지울 수 있고 게시물 작성자는 지울 수 없다. 실패하면 서버 message를 그대로 보여 준다.
+// - 403: 삭제 권한이 없음 / 404: 없거나 이미 삭제된 댓글
 export async function deleteComment(id: string): Promise<void> {
-   await mockDelay(400);
-
-   const record = findRecord(id);
-   if (!record || record.deleted) {
-      throw new ApiError(COMMENT_ERROR.NOT_FOUND, '댓글을 찾을 수 없어요');
-   }
-   if (currentViewer() !== record.author) {
-      throw new ApiError(COMMENT_ERROR.FORBIDDEN, '삭제할 수 없는 댓글이에요');
-   }
-
-   record.deleted = true;
+   await apiFetch<null>(`/post/comment/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

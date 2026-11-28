@@ -20,5 +20,5 @@ export function ItemText({ item, showPrice = true }: { item: ListItem; showPrice
 
 // 가격은 "4,000원", "시가"처럼 입력한 문자열 그대로 보여 준다.
 export function ItemPrice({ children }: { children: string }) {
-   return <p className="text-sm font-medium text-site-text">{children}</p>;
+   return <p className="text-sm font-medium text-site-primary">{children}</p>;
 }

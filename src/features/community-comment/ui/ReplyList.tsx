@@ -8,6 +8,8 @@ import { ReplyItem } from './ReplyItem';
 
 interface ReplyListProps {
    rootId: string;
+   // 부모(최상위) 댓글이 삭제됐는지
+   rootDeleted: boolean;
    // 서버가 알려 준 이 스레드의 답글 수
    replyCount: number;
    replies: ReturnType<typeof useReplies>;
@@ -17,10 +19,11 @@ interface ReplyListProps {
    children?: ReactNode;
 }
 
-// 한 스레드의 대댓글. 기본은 접혀 있고("답글 N개 보기"), 펼치면 5개를 보여 준 뒤 "답글 N개 더 보기"로 이어서 불러온다.
-// 대댓글은 오래된 순이라 새 답글은 맨 끝에 붙는다. 들여쓰기와 왼쪽 세로선으로 스레드임을 보여 준다.
+// 한 스레드의 대댓글. 기본은 접혀 있고("답글 N개 보기"), 펼치면 서버가 준 답글을 한 번에 모두 보여 준다.
+// 새 답글은 맨 끝에 붙는다. 들여쓰기와 왼쪽 세로선으로 스레드임을 보여 준다.
 export function ReplyList({
    rootId,
+   rootDeleted,
    replyCount,
    replies,
    onReply,
@@ -28,12 +31,14 @@ export function ReplyList({
    children,
 }: ReplyListProps) {
    const listId = useId();
-   const remaining = Math.max(0, replyCount - replies.items.length);
    const firstLoading = replies.status === 'loading' && !replies.loaded;
+   // 서버가 알려 준 답글 수와 실제로 받은 답글 수가 다를 수 있다. (예: 답글을 지운 직후, 삭제된 답글 줄을 개수에 세는지에 따라)
+   // 받은 답글이 더 많으면 그 수를 써서, 보이는 답글이 있는데 접는 버튼이 사라지는 일이 없게 한다.
+   const shownCount = Math.max(replyCount, replies.items.length);
 
    return (
       <div>
-         {replyCount > 0 && (
+         {shownCount > 0 && (
             <button
                type="button"
                aria-expanded={replies.expanded}
@@ -41,7 +46,7 @@ export function ReplyList({
                onClick={replies.expanded ? replies.collapse : replies.expand}
                className="flex w-full cursor-pointer items-center justify-center gap-1 py-2 text-sm font-semibold text-brand-orange hover:underline"
             >
-               {replies.expanded ? `답글 ${replyCount}개 접기` : `답글 ${replyCount}개 보기`}
+               {replies.expanded ? `답글 ${shownCount}개 접기` : `답글 ${shownCount}개 보기`}
                {replies.expanded ? (
                   <ChevronUp aria-hidden className="size-4" />
                ) : (
@@ -70,6 +75,7 @@ export function ReplyList({
                            key={reply.id}
                            reply={reply}
                            rootId={rootId}
+                           rootDeleted={rootDeleted}
                            onReply={onReply}
                            onDeleted={onDeleted}
                         />
@@ -91,22 +97,6 @@ export function ReplyList({
                         다시 시도
                      </button>
                   </div>
-               )}
-
-               {replies.hasNext && replies.status !== 'error' && (
-                  <button
-                     type="button"
-                     disabled={replies.status === 'loading-more' || replies.status === 'loading'}
-                     onClick={replies.loadMore}
-                     className="flex w-full cursor-pointer items-center justify-center gap-1 py-2 text-sm font-semibold text-brand-orange hover:underline disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                     {replies.status === 'loading-more'
-                        ? '불러오는 중'
-                        : remaining > 0
-                          ? `답글 ${remaining}개 더 보기`
-                          : '답글 더 보기'}
-                     <ChevronDown aria-hidden className="size-4" />
-                  </button>
                )}
             </div>
          )}

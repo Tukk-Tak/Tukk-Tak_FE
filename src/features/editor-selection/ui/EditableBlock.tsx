@@ -56,7 +56,7 @@ export function EditableBlock({ section, order, children }: EditableBlockProps) 
          {enabled && (
             <span
                aria-hidden
-               className="pointer-events-none absolute top-4.5 left-4 text-[14px] leading-none font-bold text-brand-orange"
+               className="pointer-events-none absolute font-sans top-4.5 left-4 text-[14px] leading-none font-bold text-brand-orange"
             >
                {label}
             </span>
@@ -69,7 +69,7 @@ export function EditableBlock({ section, order, children }: EditableBlockProps) 
                />
                <span
                   aria-hidden
-                  className="pointer-events-none absolute -top-3.5 left-5 rounded-md bg-brand-orange px-3 py-1.5 text-sm leading-none font-bold text-white"
+                  className="pointer-events-none absolute font-sans -top-3.5 left-5 rounded-md bg-brand-orange px-3 py-1.5 text-sm leading-none font-bold text-white"
                >
                   선택됨
                </span>
